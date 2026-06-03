@@ -3,28 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sésame - Ouvrez vos horizons</title>
+  <title>Sésame - Ouvre-toi</title>
   
   <!-- Chargement du CDN Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Configuration standard de Tailwind CSS -->
+  <!-- Configuration dynamique de Tailwind CSS basée sur nos variables CSS -->
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
             sesame: {
-              50: '#fdfbf7',
-              100: '#fbf7ed',
-              200: '#f5ecd5',
-              300: '#ebd8ad',
-              400: '#dfbe7f',
-              500: '#d19e51',
-              600: '#be813b',
-              700: '#9e622d',
-              800: '#804e27',
-              900: '#683f21',
-              950: '#392010',
+              50: 'var(--bg-50)',
+              100: 'var(--bg-100)',
+              200: 'var(--bg-200)',
+              300: 'var(--bg-300)',
+              400: 'var(--primary-400)',
+              500: 'var(--primary-500)',
+              600: 'var(--primary-600)',
+              700: 'var(--primary-700)',
+              800: 'var(--primary-800)',
+              900: 'var(--primary-900)',
+              950: 'var(--primary-950)',
             }
           }
         }
@@ -42,6 +42,39 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+    
+    /* ==========================================================================
+       ESPACE DE PERSONNALISATION DES COULEURS
+       Modifiez simplement les codes ci-dessous pour changer tout le site !
+       ========================================================================== */
+    :root {
+      /* --- 1. COULEUR DE FOND DE L'EN-TÊTE (HEADER) --- */
+      --header-bg: #0C0E2D;    /* Couleur de l'en-tête (ex: #ffffff, #1b1464, etc.) */
+
+      /* --- 2. COULEUR DE FOND DU PIED DE PAGE GÉNÉRAL (FOOTER) --- */
+      --header-bgbas: #0C0E2D; /* Remplacer par la couleur de votre choix pour le pied de page (ex: #1a0f08, #0b132b, etc.) */
+
+      /* --- 3. COULEURS DE FOND CLAIR DU SITE --- */
+      --bg-50: #31187c;        /* Couleur de fond principale de la page */
+      --bg-100: #fbf7ed;       /* Couleur de fond secondaire légèrement plus foncée */
+      --bg-200: #f5ecd5;       /* Couleur de bordure et de légers reliefs */
+      --bg-300: #ebd8ad;       /* Couleur des éléments actifs secondaires */
+      
+      /* --- 4. COULEURS DE MARQUE PRINCIPALES (Le Doré/Bronze Sésame d'origine) --- */
+      --primary-400: #dfbe7f;  /* Doré très clair (barre de défilement) */
+      --primary-500: #d19e51;  /* Doré moyen */
+      --primary-600: #be813b;  /* Doré chaud (Logo Sésame, éléments clés) */
+      --primary-700: #9e622d;  /* Cuivré foncé */
+      --primary-800: #1E293B;  /* Chocolat */
+      --primary-900: #683f21;  /* Chocolat foncé (Boutons au survol) */
+      --primary-950: #ffffff;  /* Marron très sombre (Textes forts) */
+
+      /* --- 5. COULEURS DE LA BANNIÈRE D'ACCUEIL (Dégradé bleu/violet moderne d'origine) --- */
+      --hero-grad-1: #1b1464;  /* Bleu royal profond (Haut gauche du Hero) */
+      --hero-grad-2: #2e269c;  /* Bleu violet (Milieu du Hero) */
+      --hero-grad-3: #4f46e5;  /* Violet électrique (Bas droit du Hero) */
+    }
+
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
@@ -50,79 +83,37 @@
       width: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #fdfbf7;
+      background: var(--bg-50);
     }
     ::-webkit-scrollbar-thumb {
-      background: #dfbe7f;
+      background: var(--primary-400);
       border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #be813b;
+      background: var(--primary-600);
     }
 
-    /* Styles pour la modale et le bouton CodePlay */
-    /* Floutage de l'arrière-plan */
-    .modal-overlay {
-        backdrop-filter: blur(8px);
-        transition: all 0.3s ease-in-out;
-    }
-    
-    /* Effet d'apparition de la fenêtre */
-    .modal-content {
-        transform: scale(0.95);
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    
-    .modal-active .modal-overlay {
-        opacity: 1;
-        pointer-events: auto;
-    }
-    
-    .modal-active .modal-content {
-        transform: scale(1);
-        opacity: 1;
+    /* Style forcé pour l'en-tête basé sur la variable CSS */
+    .custom-header-bg {
+      background-color: var(--header-bg) !important;
     }
 
-    /* Style du bouton */
-    .mon-bouton-style {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        color: white;
-        font-weight: 600;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.5rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
-        transition: all 0.2s ease-in-out;
-        cursor: pointer;
-        border: none;
-        text-decoration: none;
+    /* Style forcé pour le pied de page (Footer) basé sur la variable CSS */
+    .custom-footer-bg {
+      background-color: var(--header-bgbas) !important;
     }
 
-    .mon-bouton-style:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.05);
-        filter: brightness(1.1);
+    /* Fond en dégradé dynamique du Hero */
+    .hero-tech-bg {
+      background: linear-gradient(135deg, var(--hero-grad-1) 0%, var(--hero-grad-2) 50%, var(--hero-grad-3) 100%);
     }
 
-    .mon-bouton-style:active {
-        transform: translateY(0);
-    }
-
-    /* Animation de chargement */
-    .spinner {
-        border: 3px solid rgba(255, 255, 255, 0.1);
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border-left-color: #4f46e5;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    /* Grille de mise en page / quadrillage graphique blanc transparent */
+    .hero-tech-grid {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 45px 45px;
     }
   </style>
 </head>
@@ -160,24 +151,38 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Nouveau composant Logo Sésame basé sur sesame.png
+    // Déclaration du tout nouveau composant de logo Sésame basé exactement sur l'image envoyée
     function SesameLogo({ className = "w-10 h-10" }) {
       return (
-        <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg className={`${className} shadow-lg rounded-[28%]`} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Dégradé de la bordure lumineuse */}
           <defs>
-            <linearGradient id="sesame-border-gradient" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#ff9f43" />
-              <stop offset="30%" stopColor="#ff5252" />
-              <stop offset="70%" stopColor="#7f53ac" />
-              <stop offset="100%" stopColor="#6471eb" />
+            <linearGradient id="sesameBorderGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#4f46e5" /> {/* Violet / Bleu électrique */}
+              <stop offset="50%" stopColor="#d946ef" /> {/* Magenta / Rose */}
+              <stop offset="100%" stopColor="#f59e0b" /> {/* Doré / Orange chaud */}
             </linearGradient>
           </defs>
-          {/* Fond sombre squircle arrondi de couleur marine profonde */}
-          <rect x="4" y="4" width="92" height="92" rx="26" fill="#070b19" />
-          {/* Contour dégradé lumineux */}
-          <rect x="4" y="4" width="92" height="92" rx="26" stroke="url(#sesame-border-gradient)" strokeWidth="4.5" />
-          {/* Lettre S majuscule grasse et colorée */}
-          <text x="50" y="64" fill="#ffca28" fontSize="48" fontWeight="900" textAnchor="middle" fontFamily="'Plus Jakarta Sans', system-ui, sans-serif">S</text>
+          
+          {/* Fond sombre arrondi */}
+          <rect width="512" height="512" rx="140" fill="#070b19" />
+          
+          {/* Bordure stylisée en dégradé */}
+          <rect x="16" y="16" width="480" height="480" rx="124" stroke="url(#sesameBorderGradient)" strokeWidth="20" fill="none" />
+          
+          {/* Lettre S centrale parfaitement proportionnée de couleur jaune/doré */}
+          <text 
+            x="50%" 
+            y="54%" 
+            dominantBaseline="middle" 
+            textAnchor="middle" 
+            fill="#fec033" 
+            fontSize="280" 
+            fontWeight="900" 
+            fontFamily="'Plus Jakarta Sans', 'Arial Black', sans-serif"
+          >
+            S
+          </text>
         </svg>
       );
     }
@@ -524,14 +529,14 @@
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const newUser = userCredential.user;
 
-          // Création du profil initial
+          // Profil initial
           await setDoc(doc(db, 'artifacts', appId, 'users', newUser.uid, 'profile', 'info'), {
             fullName: fullName || "Client Sésame",
             email: email,
             createdAt: new Date().toISOString()
           });
 
-          // Création des abonnements initiaux
+          // Abonnements initiaux
           const initialSubs = {
             digital: false,
             conseil: false,
@@ -541,24 +546,22 @@
           
           await setDoc(doc(db, 'artifacts', appId, 'users', newUser.uid, 'subscriptions', 'current'), initialSubs);
 
-          // Enregistrer le premier geste sur Firestore
+          // Activité initiale
           await logUserActivity(newUser.uid, "Création du compte Sésame", `Bienvenue chez Sésame, ${fullName || email}`);
           
-          // Notification Formspree de la création du compte
+          // Formspree
           await sendUpdateToFormspree(initialSubs, "Création de compte", "Création");
 
           setAuthSuccess('Votre compte a été créé avec succès !');
           
-          // Fermeture instantanée de la petite fenêtre dès la réussite
           setShowAuthModal(false);
           setActiveTab('dashboard');
           
-          // Nettoyer les champs du formulaire
           setEmail('');
           setPassword('');
           setFullName('');
         } catch (error) {
-          isNewUserRegistered.current = false; // Réinitialiser en cas d'erreur
+          isNewUserRegistered.current = false;
           setAuthError(getFriendlyErrorMessage(error.code));
         }
       };
@@ -575,7 +578,6 @@
           const userCredential = await signInWithEmailAndPassword(auth, email, password);
           await logUserActivity(userCredential.user.uid, "Connexion manuelle", "Session initiée avec succès");
           
-          // Fermeture instantanée de la petite fenêtre dès la réussite
           setShowAuthModal(false);
           setActiveTab('dashboard');
           
@@ -614,7 +616,7 @@
         }
       };
 
-      // Activer / Désactiver un service
+      // Activer / Désactiver un service - LIÉ CORRECTEMENT ET VÉRIFIÉ POUR LE LOG D'ACTIVITÉ EN TEMPS RÉEL
       const toggleService = async (serviceKey, serviceName, costInfo = "") => {
         if (!user) {
           setShowAuthModal(true);
@@ -625,37 +627,39 @@
         setActionLoading(true);
         const { db, appId, doc, setDoc } = services;
         
-        const currentStatus = !userSubscriptions[serviceKey];
+        // Déterminer le statut final (cible) après l'action du clic
+        const nextStatus = !userSubscriptions[serviceKey];
 
         const updatedSubs = {
-          digital: serviceKey === 'digital' ? currentStatus : !!userSubscriptions.digital,
-          conseil: serviceKey === 'conseil' ? currentStatus : !!userSubscriptions.conseil,
-          resteDuMonde: serviceKey === 'resteDuMonde' ? currentStatus : !!userSubscriptions.resteDuMonde,
-          sesameExpress: serviceKey === 'sesameExpress' ? currentStatus : !!userSubscriptions.sesameExpress
+          digital: serviceKey === 'digital' ? nextStatus : !!userSubscriptions.digital,
+          conseil: serviceKey === 'conseil' ? nextStatus : !!userSubscriptions.conseil,
+          resteDuMonde: serviceKey === 'resteDuMonde' ? nextStatus : !!userSubscriptions.resteDuMonde,
+          sesameExpress: serviceKey === 'sesameExpress' ? nextStatus : !!userSubscriptions.sesameExpress
         };
 
         try {
-          // 1. Sauvegarde dans Firestore
+          // 1. Sauvegarde dans Firestore des abonnements mis à jour
           await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'subscriptions', 'current'), updatedSubs);
           
-          const actionWord = currentStatus ? "Activation" : "Désactivation";
-          const costDesc = currentStatus && costInfo ? ` au prix de ${costInfo}` : "";
+          // Formulation claire et propre de l'action de modification de l'abonnement pour l'historique
+          const actionWord = nextStatus ? "Activation" : "Désactivation";
+          const costDesc = (nextStatus && costInfo) ? ` au prix de ${costInfo}` : "";
           
-          // 2. Log de l'activité locale pour affichage dans l'historique
+          // 2. Écriture immédiate du log d'activité sur Firestore
           await logUserActivity(
             user.uid, 
             `${actionWord} : ${serviceName}`, 
-            `L'utilisateur a configuré le service "${serviceName}" sur ${currentStatus ? 'ACTIF' : 'INACTIF'}${costDesc}.`
+            `L'utilisateur a configuré le service "${serviceName}" sur ${nextStatus ? 'ACTIF' : 'INACTIF'}${costDesc}.`
           );
 
-          // 3. ENVOI INSTANTANÉ VERS FORMSPREE
+          // 3. Notification par formulaire externe (Formspree)
           await sendUpdateToFormspree(updatedSubs, serviceName, actionWord);
 
           showNotification(
-            currentStatus 
+            nextStatus 
               ? `Service "${serviceName}" activé avec succès !` 
               : `Service "${serviceName}" désactivé.`,
-            currentStatus ? "success" : "info"
+            nextStatus ? "success" : "info"
           );
         } catch (error) {
           console.error("Erreur de mise à jour :", error);
@@ -679,7 +683,7 @@
         }
       };
 
-      // GESTION DU CLIC SUR LA FAQ POUR SUIVRE LES FAITS ET GESTES
+      // GESTION DU CLIC SUR LA FAQ
       const toggleFaqItem = (index) => {
         const isOpening = openFaqIndex !== index;
         setOpenFaqIndex(isOpening ? index : null);
@@ -712,6 +716,20 @@
         }
       };
 
+      // FONCTION DE DÉFILEMENT FLUIDE ET INTERACTIF VERS UNE SECTION DEPUIS LES CLICS FOOTER
+      const scrollToSection = (tabName, elementId) => {
+        setActiveTab(tabName);
+        setTimeout(() => {
+          const element = document.getElementById(elementId);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+        if (user) {
+          logUserActivity(user.uid, "Navigation rapide", `Défilement vers la section : ${elementId}`);
+        }
+      };
+
       if (loading) {
         return (
           <div className="flex items-center justify-center min-h-screen bg-sesame-50 text-sesame-950">
@@ -723,8 +741,15 @@
         );
       }
 
+      // Préparation de la liste des abonnements actifs pour l'affichage dynamique
+      const activeSubscriptionsList = [];
+      if (userSubscriptions.digital) activeSubscriptionsList.push({ id: 'digital', name: "SERVICES Digital & Web", desc: "Création e-commerce premium active.", icon: "💻" });
+      if (userSubscriptions.conseil) activeSubscriptionsList.push({ id: 'conseil', name: "SERVICES Conseil & Aide", desc: "Accompagnement et Propulsion Google SEO.", icon: "🤝" });
+      if (userSubscriptions.resteDuMonde) activeSubscriptionsList.push({ id: 'resteDuMonde', name: "SERVICES Le Reste du Monde", desc: "Conciergerie et requêtes sur-mesure d'exception.", icon: "🌍" });
+      if (userSubscriptions.sesameExpress) activeSubscriptionsList.push({ id: 'sesameExpress', name: "Option Sésame Express", desc: "Traitement prioritaire ultra-rapide sous 2h actif.", icon: "⚡" });
+
       return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen justify-between animate-fade-in">
           
           {/* Notifications */}
           {notif && (
@@ -736,22 +761,22 @@
             </div>
           )}
 
-          {/* En-tête (Header) */}
-          <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-sesame-100 px-6 py-4 transition-all">
+          {/* En-tête (Header) avec couleur de fond dynamique personnalisable */}
+          <header className="sticky top-0 z-40 bg-white/90 custom-header-bg backdrop-blur-md border-b border-sesame-100 px-6 py-4 transition-all">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
               
-              {/* Logo personnalisé de l'image */}
+              {/* Logo personnalisé dynamique avec le nouveau design S SVG de l'image */}
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-                <SesameLogo className="w-10 h-10 shadow-lg shadow-sesame-950/20" />
-                <div>
+                <SesameLogo className="w-12 h-12" />
+                <div className="text-left">
                   <h1 className="text-2xl font-black tracking-wider text-sesame-950 flex items-center gap-1">
                     SÉSAME <span className="text-xs font-semibold bg-sesame-100 text-sesame-700 px-2 py-0.5 rounded-full">SERVICES</span>
                   </h1>
-                  <p className="text-[10px] text-sesame-600 tracking-widest uppercase font-bold">Ouvrez le reste du monde</p>
+                  <p className="text-[10px] text-sesame-600 tracking-widest uppercase font-bold">Ouvrez vos portes</p>
                 </div>
               </div>
 
-              {/* Navigation */}
+              {/* Navigation : Le bouton Tableau de Bord au centre a été supprimé */}
               <nav className="hidden md:flex items-center gap-8">
                 <button 
                   onClick={() => navigateTo('home')} 
@@ -763,25 +788,27 @@
                   className={`text-sm font-medium transition-colors ${activeTab === 'services' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
                   Piliers de Services
                 </button>
-                {user && (
-                  <button 
-                    onClick={() => navigateTo('dashboard')} 
-                    className={`text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
-                    Tableau de Bord / Espace Client
-                  </button>
-                )}
               </nav>
 
               {/* Actions de Session */}
               <div className="flex items-center gap-4">
                 {user ? (
                   <div className="flex items-center gap-3">
-                    <button 
+                    {/* BOUTON ADRESSE EMAIL UNIQUE ET INTERACTIF */}
+                    <div 
                       onClick={() => navigateTo('dashboard')}
-                      className="hidden sm:flex items-center gap-2 bg-sesame-50 hover:bg-sesame-100 text-sesame-800 text-xs font-bold px-4 py-2 rounded-xl transition border border-sesame-200">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                      Espace Client
-                    </button>
+                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition border cursor-pointer select-none ${
+                        activeTab === 'dashboard' 
+                          ? 'bg-sesame-100 border-sesame-400 text-sesame-950 font-bold' 
+                          : 'bg-sesame-50 hover:bg-sesame-100 text-sesame-800 border-sesame-200'
+                      }`}>
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                      </span>
+                      {/* Utilisation de text-sesame-900 pour garantir un contraste optimal et que l'e-mail soit parfaitement lisible */}
+                      <span className="max-w-[150px] truncate font-mono text-xs text-sesame-900 font-semibold">{user.email}</span>
+                    </div>
                     <button 
                       onClick={handleLogout}
                       className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-4 py-2 rounded-xl transition border border-rose-200 flex items-center gap-1.5">
@@ -792,7 +819,7 @@
                   <button 
                     onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
                     className="bg-sesame-800 hover:bg-sesame-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2">
-                    Connexion / Inscription
+                    Connexion
                   </button>
                 )}
               </div>
@@ -803,21 +830,21 @@
             
             {/* Section Accueil */}
             {activeTab === 'home' && (
-              <div className="relative overflow-hidden bg-gradient-to-b from-sesame-100/50 via-white to-transparent py-20 px-6">
-                <div className="max-w-7xl mx-auto grid md:grid-cols-12 gap-12 items-center">
-                  <div className="md:col-span-7 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-sesame-200/50 text-sesame-800 rounded-full text-xs font-bold tracking-wide uppercase">
+              <div className="relative overflow-hidden py-20 px-6 hero-tech-bg hero-tech-grid text-white">
+                <div className="max-w-7xl mx-auto grid md:grid-cols-12 gap-12 items-center relative z-10">
+                  <div className="md:col-span-7 space-y-6 text-left">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 text-amber-300 rounded-full text-xs font-bold tracking-wide uppercase">
                       🔑 SÉSAME : Votre clé de réussite
                     </div>
-                    <h2 className="text-4xl sm:text-6xl font-black text-sesame-950 leading-tight">
+                    <h2 className="text-4xl sm:text-6xl font-black text-white leading-tight">
                       Une infinité de solutions à votre portée
                     </h2>
-                    <p className="text-lg text-sesame-700 leading-relaxed max-w-2xl">
+                    <p className="text-lg text-slate-200 leading-relaxed max-w-2xl mx-auto md:mx-0">
                       Découvrez nos 3 grands piliers de services pensés pour libérer votre temps et sublimer vos projets. Du digital le plus technique au soutien personnalisé, Sésame est le partenaire de votre quotidien.
                     </p>
-                    <div className="flex flex-wrap gap-4 pt-4 items-center">
+                    <div className="flex flex-wrap gap-4 pt-4 items-center justify-center md:justify-start">
                       <button 
-                        onClick={() => navigateTo('home')}
+                        onClick={() => navigateTo('services')}
                         className="bg-sesame-600 hover:bg-sesame-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl transition transform hover:-translate-y-0.5">
                         Découvrir nos Piliers
                       </button>
@@ -841,26 +868,21 @@
                         📝 Devis Gratuit
                       </button>
 
-                      {/* BOUTON D'ACTIVATION DU MODAL CODEPLAY */}
-                      <button id="btnOpenCodePlay" className="mon-bouton-style">
-                           Ouvrir CodePlay Multi-IA 🚀
-                      </button>
-
                       {!user && (
                         <button 
                           onClick={() => { setShowAuthModal(true); setAuthMode('register'); }}
-                          className="bg-white hover:bg-sesame-50 text-sesame-800 font-bold px-8 py-4 rounded-2xl border border-sesame-200 shadow-sm transition transform hover:-translate-y-0.5">
+                          className="bg-white hover:bg-sesame-50 text-slate-900 font-bold px-8 py-4 rounded-2xl border border-sesame-200 shadow-sm transition transform hover:-translate-y-0.5">
                           S'inscrire gratuitement
                         </button>
                       )}
-                      
                     </div>
                   </div>
 
                   <div className="md:col-span-5 relative">
-                    <div className="bg-white p-8 rounded-3xl shadow-2xl border border-sesame-100 relative z-10 space-y-6">
+                    {/* ENCART SESAME EXPRESS LIÉ DYNAMIOUEMENT AVEC ID POUR LE DÉFILEMENT */}
+                    <div id="sesame-express" className="bg-white p-8 rounded-3xl shadow-2xl border border-sesame-100 relative z-10 space-y-6 text-slate-950 scroll-mt-20">
                       <div className="flex justify-between items-start">
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-left">
                           <p className="text-xs font-bold uppercase tracking-wider text-sesame-500">Service exclusif</p>
                           <h3 className="text-2xl font-black text-sesame-900">Sésame Express ⚡</h3>
                         </div>
@@ -868,7 +890,7 @@
                           80,50 €
                         </span>
                       </div>
-                      <p className="text-sm text-sesame-600 leading-relaxed">
+                      <p className="text-sm text-sesame-600 leading-relaxed text-left">
                         Besoin d'une solution immédiate pour vos besoins urgents ? Activez l'option Sésame Express et bénéficiez d'une priorisation absolue sur toutes vos demandes sous 2 heures garanties.
                       </p>
                       
@@ -887,8 +909,8 @@
                       )}
                     </div>
                     
-                    <div className="absolute -top-6 -right-6 w-72 h-72 bg-sesame-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse"></div>
-                    <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-sesame-300 rounded-full mix-blend-multiply filter blur-2xl opacity-50 animate-pulse"></div>
+                    <div className="absolute -top-6 -right-6 w-72 h-72 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse"></div>
+                    <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-2xl opacity-50 animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -908,18 +930,17 @@
 
                 <div className="grid md:grid-cols-3 gap-8 items-stretch">
                   
-                  {/* PILIER 1: Digital & Web */}
+                  {/* PILIER 1: Digital & Web - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
                   <div 
+                    id="pilier-digital"
                     onClick={() => trackServiceView("SERVICES Digital & Web")}
-                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition duration-500 cursor-pointer">
-                    <div className="space-y-6">
+                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition duration-500 cursor-pointer font-sans scroll-mt-24">
+                    <div className="space-y-6 text-left">
                       
-                      {/* Carré de l'icône rétro-éclairé */}
                       <div className="w-16 h-16 rounded-[22px] border border-slate-700/60 bg-slate-900/40 flex items-center justify-center shadow-lg">
                         <StoreIcon />
                       </div>
                       
-                      {/* Textes Principaux */}
                       <div className="space-y-3">
                         <h4 className="text-2xl font-bold tracking-tight text-white">SERVICES Digital & Web</h4>
                         <p className="text-sm text-slate-300 leading-relaxed">
@@ -927,14 +948,11 @@
                         </p>
                       </div>
                       
-                      {/* Lignes de tarification style Image */}
                       <div className="space-y-2.5 pt-2">
-                        {/* Ligne 1 */}
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
                           <span className="text-xs font-medium text-slate-400">Création de site</span>
                           <span className="text-xs font-black text-[#6366F1] tracking-wide bg-[#6366F1]/10 px-2.5 py-1 rounded-md border border-[#6366F1]/20">Sur Devis</span>
                         </div>
-                        {/* Ligne 2 */}
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
                           <span className="text-xs font-medium text-slate-400">Abonnement URL/Serveur</span>
                           <span className="text-xs font-black text-amber-400 tracking-wide bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">45€ / an</span>
@@ -942,7 +960,6 @@
                       </div>
                     </div>
 
-                    {/* Pied de carte avec contrôle d'activation */}
                     <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-500">Service Principal</span>
                       <button 
@@ -953,24 +970,22 @@
                     </div>
                   </div>
 
-                  {/* PILIER 2: Conseil & Aide */}
+                  {/* PILIER 2: Conseil & Aide - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
                   <div 
+                    id="pilier-conseil"
                     onClick={() => trackServiceView("SERVICES Conseil & Aide")}
-                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(16,185,129,0.2)] transition duration-500 cursor-pointer relative">
+                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(16,185,129,0.2)] transition duration-500 cursor-pointer relative font-sans scroll-mt-24">
                     
-                    {/* Badge POPULAIRE en haut à droite */}
                     <div className="absolute top-6 right-6 bg-amber-500/10 text-amber-400 text-[10px] font-black tracking-wider px-3 py-1 rounded-full border border-amber-500/20 uppercase">
                       Populaire
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-6 text-left">
                       
-                      {/* Carré de l'icône de poignée de main rétro-éclairé */}
                       <div className="w-16 h-16 rounded-[22px] border border-slate-700/60 bg-slate-900/40 flex items-center justify-center shadow-lg">
                         <HandshakeIcon />
                       </div>
                       
-                      {/* Textes Principaux */}
                       <div className="space-y-3">
                         <h4 className="text-2xl font-bold tracking-tight text-white">SERVICES Conseil & Aide</h4>
                         <p className="text-sm text-slate-300 leading-relaxed">
@@ -978,7 +993,6 @@
                         </p>
                       </div>
                       
-                      {/* Lignes de tarification style Image */}
                       <div className="space-y-2.5 pt-2">
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
                           <span className="text-xs font-medium text-slate-400">Accompagnement Premium</span>
@@ -987,7 +1001,6 @@
                       </div>
                     </div>
 
-                    {/* Pied de carte avec contrôle d'activation */}
                     <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-500">Formule Conseil</span>
                       <button 
@@ -998,18 +1011,17 @@
                     </div>
                   </div>
 
-                  {/* PILIER 3: Le Reste du Monde */}
+                  {/* PILIER 3: Le Reste du Monde - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
                   <div 
+                    id="pilier-reste"
                     onClick={() => trackServiceView("SERVICES Le Reste du Monde")}
-                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition duration-500 cursor-pointer">
-                    <div className="space-y-6">
+                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition duration-500 cursor-pointer font-sans scroll-mt-24">
+                    <div className="space-y-6 text-left">
                       
-                      {/* Carré de l'icône globe rétro-éclairé */}
                       <div className="w-16 h-16 rounded-[22px] border border-slate-700/60 bg-slate-900/40 flex items-center justify-center shadow-lg">
                         <GlobeIcon />
                       </div>
                       
-                      {/* Textes Principaux d'origine conservés */}
                       <div className="space-y-3">
                         <h4 className="text-2xl font-bold tracking-tight text-white">SERVICES Le Reste du Monde</h4>
                         <p className="text-sm text-slate-300 leading-relaxed">
@@ -1017,22 +1029,18 @@
                         </p>
                       </div>
                       
-                      {/* Lignes de tarification style Image */}
                       <div className="space-y-2.5 pt-2">
-                        {/* Ligne 1 */}
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
                           <span className="text-xs font-medium text-slate-400">Travaux spécifiques</span>
                           <span className="text-xs font-black text-[#6366F1] tracking-wide bg-[#6366F1]/10 px-2.5 py-1 rounded-md border border-[#6366F1]/20">Sur Devis</span>
                         </div>
-                        {/* Ligne 2 */}
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
                           <span className="text-xs font-medium text-slate-400">Option Sésame Express</span>
-                          <span className="text-xs font-black text-emerald-400 tracking-wide bg-emerald-400/10 px-2.5 py-1 rounded-md border border-emerald-400/20">80.50 €</span>
+                          <span className="text-xs font-black text-emerald-400 tracking-wide bg-[#10B981]/10 px-2.5 py-1 rounded-md border border-[#10B981]/20">80.50 €</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Pied de carte avec contrôle d'activation */}
                     <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-500">Formule Concierge</span>
                       <button 
@@ -1068,8 +1076,8 @@
                         className="bg-[#0B132B] rounded-2xl border border-slate-800/80 overflow-hidden shadow-md transition-all duration-300">
                         <button
                           onClick={() => toggleFaqItem(index)}
-                          className="w-full px-6 py-5 flex items-center justify-between text-left transition-colors duration-250 hover:bg-slate-900/40">
-                          <span className="text-xs sm:text-sm font-bold text-white pr-4 leading-normal">
+                          className="w-full px-6 py-5 flex items-center justify-between text-left transition-colors duration-250 hover:bg-slate-900/40 font-sans">
+                          <span className="text-xs sm:text-sm font-bold text-white pr-4 leading-normal font-sans">
                             {item.question}
                           </span>
                           <span className={`text-slate-400 font-bold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
@@ -1081,7 +1089,7 @@
                         
                         {/* Contenu déployable de la réponse */}
                         <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-40 border-t border-slate-800/50' : 'max-h-0'}`}>
-                          <div className="px-6 py-5 text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/20">
+                          <div className="px-6 py-5 text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/20 text-left font-sans">
                             {item.answer}
                           </div>
                         </div>
@@ -1092,111 +1100,352 @@
               </section>
             )}
 
-            {/* Suivi des actions en mode défilable */}
-            {user && (
-              <section className="py-12 px-6 max-w-7xl mx-auto border-t border-sesame-200/50 space-y-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-2xl font-black text-sesame-950">⏱️ Suivi Réel de Vos Gestes</h3>
-                    <p className="text-xs text-sesame-600">Chaque interaction, visite d'onglet, ou réglage de service est historisé en temps réel sur Firestore.</p>
+            {/* TABLEAU DE BORD CLIENT (Espace Client sécurisé) */}
+            {activeTab === 'dashboard' && user && (
+              <section className="py-12 px-6 max-w-7xl mx-auto space-y-8 animate-fade-in text-left font-sans">
+                
+                {/* Greeting Header */}
+                <div className="bg-gradient-to-r from-sesame-900 to-sesame-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+                  <div className="relative z-10 space-y-4">
+                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold tracking-wide uppercase">Tableau de Bord Client</span>
+                    <h3 className="text-3xl sm:text-5xl font-black">Bienvenue sur votre Espace Client</h3>
+                    <p className="text-sesame-200 max-w-xl text-sm sm:text-base">
+                      Configurez et gérez vos trois piliers de services ci-dessous. Toutes vos actions sont automatiquement persistées et liées à votre profil.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4 pt-2">
+                      <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-xs">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                        <span className="font-semibold text-white">Client ID:</span>
+                        <span className="font-mono text-[11px] text-sesame-300">{user.uid}</span>
+                      </div>
+                      <div className="text-xs text-sesame-300">
+                        Compte connecté : <span className="font-bold text-white">{user.email}</span>
+                      </div>
+                    </div>
+
+                    {/* Déconnexion rapide */}
+                    <div className="pt-2">
+                      <button 
+                        onClick={handleLogout}
+                        className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 shadow-lg border border-red-500/20">
+                        <span>🚪</span> Se Déconnecter de l'Espace Client
+                      </button>
+                    </div>
                   </div>
-                  <span className="w-3.5 h-3.5 bg-emerald-500 rounded-full animate-ping"></span>
+                  
+                  <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+                    <span className="text-9xl">🔑</span>
+                  </div>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sesame-100 shadow-xl overflow-hidden">
-                  {userActivities.length === 0 ? (
-                    <p className="text-xs text-sesame-400 text-center py-10">Aucun historique d'action détecté.</p>
+                {/* RÉSUMÉ DE TOUS LES SERVICES ACTIVÉS / ABONNÉS */}
+                <div className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl space-y-6">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                      <h4 className="text-lg font-black text-white flex items-center gap-2">
+                        🌟 Vos Services Sésame Actifs
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1">Détail en temps réel de tout ce qui est actuellement activé sur votre compte.</p>
+                    </div>
+                    <span className="text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 font-bold">
+                      {activeSubscriptionsList.length} Actif(s)
+                    </span>
+                  </div>
+
+                  {activeSubscriptionsList.length === 0 ? (
+                    <div className="text-center py-10 space-y-4">
+                      <span className="text-4xl block">✨</span>
+                      <p className="text-sm text-slate-400">Vous n'avez pas encore activé de services d'intervention.</p>
+                      <p className="text-xs text-slate-500">Utilisez la console ci-dessous pour choisir vos piliers Sésame.</p>
+                    </div>
                   ) : (
-                    <div className="flow-root max-h-[350px] overflow-y-auto pr-2">
-                      <ul role="list" className="space-y-6">
-                        {userActivities.map((activity, idx) => (
-                          <li key={activity.id || idx} className="relative flex gap-x-4">
-                            <div className={`absolute left-0 top-0 bottom-0 flex w-6 justify-center ${idx === userActivities.length - 1 ? 'h-6' : ''}`}>
-                              <div className="w-0.5 bg-sesame-200"></div>
-                            </div>
-                            <div className="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
-                              <span className={`h-3.5 w-3.5 rounded-full ring-4 ring-white ${
-                                activity.title.includes('Activation') ? 'bg-emerald-500' :
-                                activity.title.includes('Désactivation') ? 'bg-rose-500' :
-                                activity.title.includes('Connexion') ? 'bg-purple-500' : 'bg-amber-500'
-                              }`} />
-                            </div>
-                            <div className="flex-auto py-0.5 text-xs leading-5">
-                              <div className="flex justify-between gap-x-4">
-                                <p className="font-semibold text-sesame-900">{activity.title}</p>
-                                <time className="flex-none text-sesame-400 font-mono">
-                                  {new Date(activity.timestamp).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
-                                </time>
-                              </div>
-                              <p className="text-sesame-600 mt-1">{activity.description}</p>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                      {activeSubscriptionsList.map((sub) => (
+                        <div key={sub.id} className="p-5 rounded-2xl bg-slate-900/60 border border-indigo-500/20 shadow-md flex flex-col justify-between items-start gap-4">
+                          <div className="space-y-2 flex-grow">
+                            <div className="text-3xl">{sub.icon}</div>
+                            <h5 className="font-bold text-white text-sm leading-snug">{sub.name}</h5>
+                            <p className="text-[11px] text-slate-400 leading-normal">{sub.desc}</p>
+                          </div>
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-auto">
+                            Activé ✓
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   )}
+                </div>
+
+                <div className="grid lg:grid-cols-12 gap-8">
+                  
+                  {/* Gestion des services (Gauche) */}
+                  <div className="lg:col-span-7 space-y-6">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sesame-100 shadow-xl space-y-6">
+                      <div className="flex justify-between items-center border-b border-sesame-100 pb-4">
+                        <h4 className="text-lg font-black text-sesame-950 flex items-center gap-2">
+                          📋 Vos Services Actifs & Abonnements
+                        </h4>
+                        <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full animate-pulse">
+                          Synchronisé Cloud
+                        </span>
+                      </div>
+
+                      {actionLoading && (
+                        <div className="p-4 bg-sesame-50 text-sesame-700 text-xs font-semibold rounded-2xl text-center animate-pulse border border-sesame-100">
+                          Mise à jour en cours sur Firestore...
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        
+                        {/* Service 1 */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-sesame-100 hover:bg-sesame-50/50 transition gap-4">
+                          <div className="flex items-center gap-3">
+                            <span className={`w-3 h-3 rounded-full ${userSubscriptions.digital ? 'bg-indigo-500 animate-pulse' : 'bg-sesame-300'}`}></span>
+                            <div>
+                              <p className="font-bold text-sm text-sesame-900">SERVICES Digital & Web</p>
+                              <p className="text-[11px] text-sesame-500">Création technique, Web et SEO de haut niveau</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
+                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${userSubscriptions.digital ? 'bg-indigo-100 text-indigo-800' : 'bg-sesame-100 text-sesame-500'}`}>
+                              {userSubscriptions.digital ? 'Actif ✓' : 'Inactif'}
+                            </span>
+                            <button 
+                              onClick={() => toggleService('digital', 'SERVICES Digital & Web')}
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${userSubscriptions.digital ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-sesame-800 text-white hover:bg-sesame-900 shadow'}`}>
+                              {userSubscriptions.digital ? 'Résilier' : 'Activer'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Service 2 */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-sesame-100 hover:bg-sesame-50/50 transition gap-4">
+                          <div className="flex items-center gap-3">
+                            <span className={`w-3 h-3 rounded-full ${userSubscriptions.conseil ? 'bg-emerald-500 animate-pulse' : 'bg-sesame-300'}`}></span>
+                            <div>
+                              <p className="font-bold text-sm text-sesame-900">SERVICES Conseil & Aide</p>
+                              <p className="text-[11px] text-sesame-500">Accompagnement et support administratif stratégique</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
+                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${userSubscriptions.conseil ? 'bg-emerald-100 text-emerald-800' : 'bg-sesame-100 text-sesame-500'}`}>
+                              {userSubscriptions.conseil ? 'Actif ✓' : 'Inactif'}
+                            </span>
+                            <button 
+                              onClick={() => toggleService('conseil', 'SERVICES Conseil & Aide')}
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${userSubscriptions.conseil ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-sesame-800 text-white hover:bg-sesame-900 shadow'}`}>
+                              {userSubscriptions.conseil ? 'Résilier' : 'Activer'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Service 3 */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-sesame-100 hover:bg-sesame-50/50 transition gap-4">
+                          <div className="flex items-center gap-3">
+                            <span className={`w-3 h-3 rounded-full ${userSubscriptions.resteDuMonde ? 'bg-sesame-600 animate-pulse' : 'bg-sesame-300'}`}></span>
+                            <div>
+                              <p className="font-bold text-sm text-sesame-900">SERVICES Le Reste du Monde</p>
+                              <p className="text-[11px] text-sesame-500">Conciergerie globale d'exception</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
+                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${userSubscriptions.resteDuMonde ? 'bg-indigo-100 text-indigo-800' : 'bg-sesame-100 text-sesame-500'}`}>
+                              {userSubscriptions.resteDuMonde ? 'Actif ✓' : 'Inactif'}
+                            </span>
+                            <button 
+                              onClick={() => toggleService('resteDuMonde', 'SERVICES Le Reste du Monde')}
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${userSubscriptions.resteDuMonde ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-sesame-800 text-white hover:bg-sesame-900 shadow'}`}>
+                              {userSubscriptions.resteDuMonde ? 'Résilier' : 'Activer'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Option Sésame Express */}
+                        <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="bg-amber-200 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded">
+                                  EXCLUSIVITÉ
+                                </span>
+                                <h5 className="font-black text-sm text-amber-900">Option Sésame Express ⚡</h5>
+                              </div>
+                              <p className="text-[11px] text-amber-800 mt-1">Garantie de traitement ultra-rapide sous 2 heures.</p>
+                            </div>
+                            <span className="text-sm font-black text-amber-950 shrink-0">80.50 €</span>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-2 border-t border-amber-200/50">
+                            <span className={`text-xs font-bold ${userSubscriptions.sesameExpress ? 'text-amber-800' : 'text-sesame-500'}`}>
+                              Statut : {userSubscriptions.sesameExpress ? 'Activé (Facturé)' : 'Désactivé'}
+                            </span>
+                            <button 
+                              onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 €')}
+                              className={`px-4 py-2 rounded-xl text-xs font-black transition ${userSubscriptions.sesameExpress ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-amber-600 text-white hover:bg-amber-700 shadow'}`}>
+                              {userSubscriptions.sesameExpress ? 'Désactiver' : 'Activer pour 80.50 €'}
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Flux d'activité en temps réel (Droite) */}
+                  <div className="lg:col-span-5 space-y-6">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sesame-100 shadow-xl space-y-6">
+                      <div className="flex justify-between items-center border-b border-sesame-100 pb-4">
+                        <div className="space-y-1">
+                          <h4 className="text-lg font-black text-sesame-950 flex items-center gap-2">
+                            ⏱️ Suivi Réel de Vos Actions
+                          </h4>
+                          <p className="text-xs text-sesame-500">Chaque geste ou configuration de service est historisé.</p>
+                        </div>
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                      </div>
+
+                      {userActivities.length === 0 ? (
+                        <div className="text-center py-12 text-sesame-500 space-y-2">
+                          <p className="text-sm">Aucune action enregistrée pour le moment.</p>
+                          <p className="text-[11px] text-sesame-400">Vos gestes s'afficheront instantanément ici lors de l'utilisation du site.</p>
+                        </div>
+                      ) : (
+                        <div className="flow-root max-h-[350px] overflow-y-auto pr-2">
+                          <ul className="space-y-6">
+                            {userActivities.map((activity, idx) => (
+                              <li key={activity.id || idx} className="relative flex gap-x-4">
+                                <div className={`absolute left-0 top-0 bottom-0 flex w-6 justify-center ${idx === userActivities.length - 1 ? 'h-6' : ''}`}>
+                                  <div className="w-0.5 bg-sesame-200"></div>
+                                </div>
+                                <div className="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
+                                  <span className={`h-3.5 w-3.5 rounded-full ring-4 ring-white ${
+                                    activity.title.includes('Activation') ? 'bg-emerald-500' :
+                                    activity.title.includes('Désactivation') ? 'bg-rose-500' :
+                                    activity.title.includes('Connexion') ? 'bg-purple-500' : 'bg-amber-500'
+                                  }`} />
+                                </div>
+                                <div className="flex-auto py-0.5 text-xs leading-5">
+                                  <div className="flex justify-between gap-x-4">
+                                    <p className="font-semibold text-sesame-900">{activity.title}</p>
+                                    <time className="flex-none text-sesame-400 font-mono">
+                                      {new Date(activity.timestamp).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
+                                    </time>
+                                  </div>
+                                  <p className="text-sesame-600 mt-1">{activity.description}</p>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               </section>
             )}
 
           </main>
 
-          {/* Pied de page (Footer) */}
-          <footer className="bg-sesame-950 text-sesame-200 py-12 px-6 border-t border-sesame-900 mt-12">
-            <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <SesameLogo className="w-8 h-8" />
-                  <h4 className="text-white text-xl font-black tracking-wider">SÉSAME</h4>
+          {/* PIED DE PAGE GÉNÉRAL - MASQUÉ SUR LE TABLEAU DE BORD (DASHBOARD) AVEC COULEUR DYNAMIQUE APPLIQUÉE */}
+          {activeTab !== 'dashboard' && (
+            <footer className="custom-footer-bg text-white pt-12 pb-6 px-6 border-t border-sesame-900 text-left font-sans">
+              <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                {/* Colonne 1 : Sésame */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <SesameLogo className="w-8 h-8" />
+                    <h3 className="text-xl font-black uppercase tracking-wider">Sésame</h3>
+                  </div>
+                  <p className="text-xs text-sesame-300 leading-relaxed max-w-sm">
+                    Votre clé d'accès universelle à un monde de services d'élite. Conçu pour simplifier votre quotidien.
+                  </p>
                 </div>
-                <p className="text-xs text-sesame-400 leading-relaxed">
-                  Votre clé d'accès universelle à un monde de services d'élite. Conçu pour simplifier votre quotidien.
-                </p>
+
+                {/* Colonne 2 : Nos Piliers - LIÉS INTERACTIVEMENT */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-black uppercase tracking-wider text-sesame-400">Nos Piliers</h4>
+                  <ul className="space-y-2 text-xs text-sesame-300">
+                    <li>
+                      <button 
+                        onClick={() => scrollToSection('services', 'pilier-digital')} 
+                        className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
+                      >
+                        Digital & Web
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => scrollToSection('services', 'pilier-conseil')} 
+                        className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
+                      >
+                        Conseil & Aide
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        onClick={() => scrollToSection('services', 'pilier-reste')} 
+                        className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
+                      >
+                        Le Reste du Monde
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Colonne 3 : Options Premium - LIÉES INTERACTIVEMENT */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-black uppercase tracking-wider text-sesame-400">Options Premium</h4>
+                  <ul className="space-y-2 text-xs text-sesame-300">
+                    <li className="text-amber-400 font-bold">
+                      <button 
+                        onClick={() => scrollToSection('home', 'sesame-express')} 
+                        className="hover:text-amber-300 transition text-left focus:outline-none"
+                      >
+                        Sésame Express ⚡ <span className="text-neutral-400 font-normal">(80.50 €)</span>
+                      </button>
+                    </li>
+                    <li>Conciergerie Instantanée</li>
+                  </ul>
+                </div>
+
               </div>
-              <div>
-                <h5 className="text-white text-sm font-black mb-4 uppercase tracking-wider">Nos Piliers</h5>
-                <ul className="space-y-2 text-xs text-sesame-400">
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('services'); }} className="hover:text-white transition">Digital & Web</a></li>
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('services'); }} className="hover:text-white transition">Conseil & Aide</a></li>
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); navigateTo('services'); }} className="hover:text-white transition">Le Reste du Monde</a></li>
-                </ul>
+
+              {/* Ligne de Copyright & Option Cookie cliquable à la fin du Footer */}
+              <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-sesame-900/40 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-sesame-500">
+                <div>
+                  © 2026 Sésame. Tous droits réservés.
+                </div>
+                {/* PETITE IMAGE DE COOKIE INTERNET CLIQUABLE AVEC URL */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sesame-400 text-[10px]">Préférences de traceurs</span>
+                  <a 
+                    href="https://teleprime4k.github.io/4k/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    title="En savoir plus sur nos cookies"
+                    className="inline-block transition-transform hover:scale-125 duration-200"
+                  >
+                    <svg className="w-6 h-6 text-amber-500 hover:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+                      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="16" cy="15.5" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="11" cy="17" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="7" cy="14" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
+                  </a>
+                </div>
               </div>
-              <div>
-                <h5 className="text-white text-sm font-black mb-4 uppercase tracking-wider">Options Premium</h5>
-                <ul className="space-y-2 text-xs text-sesame-400">
-                  <li><span className="text-amber-400 font-bold">Sésame Express⚡ (80.50 €)</span></li>
-                  <li><span>Conciergerie Instantanée</span></li>
-                </ul>
-              </div>
-              <div>
-                <h5 className="text-white text-sm font-black mb-4 uppercase tracking-wider">Espace Client</h5>
-                <p className="text-xs text-sesame-400 leading-relaxed mb-3">
-                  Pilotez vos services et verifiez l'historique complet de vos activités en temps réel.
-                </p>
-                {user ? (
-                  <button 
-                    onClick={() => navigateTo('dashboard')}
-                    className="w-full bg-sesame-800 hover:bg-sesame-700 text-white font-bold text-xs py-2.5 rounded-xl transition">
-                    Accéder à mon espace client (Espace Client)
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
-                    className="w-full bg-sesame-800 hover:bg-sesame-700 text-white font-bold text-xs py-2.5 rounded-xl transition">
-                    S'inscrire / Se connecter
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="max-w-7xl mx-auto border-t border-sesame-900/60 mt-10 pt-6 text-center text-xs text-sesame-500">
-              © {new Date().getFullYear()} Sésame. Tous droits réservés. Propulsé par Firebase & Firestore.
-            </div>
-          </footer>
+            </footer>
+          )}
 
           {/* MODAL AUTHENTIFICATION */}
           {showAuthModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in font-sans">
+              <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative text-slate-950 text-left">
                 
                 {/* Bouton de fermeture */}
                 <button 
@@ -1250,7 +1499,7 @@
                       placeholder="votre@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-sesame-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500" 
+                      className="w-full px-4 py-3 rounded-xl border border-sesame-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 font-sans" 
                     />
                   </div>
 
@@ -1293,12 +1542,10 @@
             </div>
           )}
 
-          {/* ========================================== */}
           {/* FENÊTRE MODALE DE L'ESPACE DE RÈGLEMENT */}
-          {/* ========================================== */}
           {showPaymentModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in font-sans">
+              <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative text-slate-950 text-left">
                 
                 {/* Bouton de Fermeture */}
                 <button 
@@ -1317,7 +1564,7 @@
                   
                   {/* Option 1 : Digital & Web */}
                   <a 
-                    href="https://payment.sesame.fr/digital-web" 
+                    href="https://buy.stripe.com/dRmcMY0by6Gba0I7TDgYU01" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => {
@@ -1344,7 +1591,7 @@
                       handlePaymentClick("SERVICES Conseil & Aide");
                       setShowPaymentModal(false);
                     }}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition text-left group">
+                    className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition text-left group font-sans">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">🤝</span>
                       <div>
@@ -1377,7 +1624,7 @@
 
                   {/* Option Exclusive : Sésame Express */}
                   <a 
-                    href="https://payment.sesame.fr/sesame-express" 
+                    href="https://buy.stripe.com/9B64gsaQc8Oj3Ck4HrgYU00" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => {
@@ -1400,12 +1647,10 @@
             </div>
           )}
 
-          {/* ========================================== */}
           {/* FENÊTRE MODALE DE DEMANDE DE DEVIS GRATUIT */}
-          {/* ========================================== */}
           {showQuoteModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in">
-              <div className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in font-sans">
+              <div className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto text-slate-950 text-left">
                 
                 {/* Bouton de Fermeture */}
                 <button 
@@ -1424,7 +1669,7 @@
                   
                   {/* Section des 3 Piliers Sésame */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-sesame-800 uppercase block tracking-wider">Sélectionnez les services souhaités :</label>
+                    <label className="text-xs font-bold text-sesame-800 uppercase block tracking-wider font-sans">Sélectionnez les services souhaités :</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       
                       {/* Pilier Digital */}
@@ -1482,7 +1727,7 @@
                         placeholder="Jean Dupont"
                         value={quoteName}
                         onChange={(e) => setQuoteName(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500" 
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 font-sans" 
                       />
                     </div>
 
@@ -1507,7 +1752,7 @@
                       placeholder="votre@email.com"
                       value={quoteEmail}
                       onChange={(e) => setQuoteEmail(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500" 
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 font-sans" 
                     />
                   </div>
 
@@ -1520,7 +1765,7 @@
                       placeholder="Décrivez brièvement votre projet ou vos attentes spécifiques..."
                       value={quoteMessage}
                       onChange={(e) => setQuoteMessage(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 resize-none"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 resize-none font-sans"
                     ></textarea>
                   </div>
 
@@ -1544,119 +1789,5 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
-
-  <!-- FENÊTRE MODALE CODEPLAY -->
-  <div id="codeplayModal" class="fixed inset-0 z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;" aria-hidden="true">
-      <!-- Arrière-plan sombre -->
-      <div id="modalOverlay" class="absolute inset-0 bg-slate-950/80 modal-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(2, 6, 23, 0.8);"></div>
-      
-      <!-- Structure principale de la fenêtre -->
-      <div class="relative bg-slate-900 w-11/12 max-w-6xl h-[85vh] rounded-2xl border border-slate-800 shadow-2xl flex flex-col z-10 modal-content overflow-hidden" style="position: relative; display: flex; flex-direction: column; width: 91.6%; max-width: 72rem; height: 85vh; background-color: #0f172a; border-radius: 1rem; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);">
-          
-          <!-- En-tête avec bouton Fermer et ouvrir dans un nouvel onglet -->
-          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/50" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #1e293b; background-color: rgba(2, 6, 23, 0.5);">
-              <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
-                  <div style="display: flex; gap: 0.35rem;">
-                      <div style="width: 12px; height: 12px; background-color: #ef4444; border-radius: 9999px;"></div>
-                      <div style="width: 12px; height: 12px; background-color: #eab308; border-radius: 9999px;"></div>
-                      <div style="width: 12px; height: 12px; background-color: #22c55e; border-radius: 9999px;"></div>
-                  </div>
-                  <span style="font-weight: 600; font-size: 0.875rem; color: #cbd5e1; font-family: sans-serif; margin-left: 0.5rem;">CodePlay Multi-IA Workspace</span>
-              </div>
-              
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <!-- Lien pour ouvrir en plein écran si l'utilisateur préfère -->
-                  <a href="https://teleprime4k.github.io/CodePlay-Multi-IA/" target="_blank" title="Ouvrir dans un nouvel onglet" style="color: #94a3b8; padding: 0.5rem; border-radius: 0.375rem; display: inline-flex; justify-content: center; align-items: center; transition: background 0.2s;">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                      </svg>
-                  </a>
-                  <!-- Bouton fermer -->
-                  <button id="btnCloseCodePlay" title="Fermer" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; display: inline-flex; justify-content: center; align-items: center; transition: all 0.2s;">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                      </svg>
-                  </button>
-              </div>
-          </div>
-          
-          <!-- Corps de la fenêtre (Iframe de chargement) -->
-          <div style="flex-grow: 1; position: relative; background-color: #020617;">
-              <!-- Indicateur de chargement temporaire -->
-              <div id="iframeLoader" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #020617; z-index: 20; transition: opacity 0.3s; font-family: sans-serif;">
-                  <div class="spinner" style="margin-bottom: 1rem;"></div>
-                  <p style="color: #94a3b8; font-size: 0.875rem;">Lancement de CodePlay Multi-IA...</p>
-              </div>
-              
-              <!-- Iframe (votre lien GitHub Pages) -->
-              <iframe 
-                  id="codeplayIframe"
-                  src="" 
-                  data-src="https://teleprime4k.github.io/CodePlay-Multi-IA/"
-                  style="width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.5s; z-index: 10;"
-                  allow="clipboard-read; clipboard-write; camera; microphone; geolocation"
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads">
-              </iframe>
-          </div>
-      </div>
-  </div>
-
-  <!-- SCRIPT DE CONTRÔLE DE LA POP-UP -->
-  <script>
-      document.addEventListener('DOMContentLoaded', () => {
-          const modal = document.getElementById('codeplayModal');
-          const overlay = document.getElementById('modalOverlay');
-          const btnClose = document.getElementById('btnCloseCodePlay');
-          const iframe = document.getElementById('codeplayIframe');
-          const loader = document.getElementById('iframeLoader');
-
-          // Fonction pour ouvrir la fenêtre
-          function openModal() {
-              modal.classList.remove('pointer-events-none', 'opacity-0');
-              modal.classList.add('modal-active');
-              document.body.style.overflow = 'hidden'; // Empêche de faire défiler le site en arrière-plan
-              
-              // On charge l'iframe uniquement quand l'utilisateur clique (économie de bande passante)
-              if (!iframe.src) {
-                  const targetUrl = iframe.getAttribute('data-src');
-                  iframe.src = targetUrl;
-                  
-                  // Disparition de l'écran de chargement quand l'application est prête
-                  iframe.onload = () => {
-                      loader.style.opacity = '0';
-                      loader.style.pointerEvents = 'none';
-                      iframe.style.opacity = '1';
-                  };
-              }
-          }
-
-          // Fonction pour fermer la fenêtre
-          function closeModal() {
-              modal.classList.add('pointer-events-none', 'opacity-0');
-              modal.classList.remove('modal-active');
-              document.body.style.overflow = ''; // Réactive le défilement normal
-          }
-
-          // Écouteur global pour intercepter le clic sur le bouton généré par React
-          document.addEventListener('click', (e) => {
-              const btn = e.target.closest('#btnOpenCodePlay');
-              if (btn) {
-                  e.preventDefault();
-                  openModal();
-              }
-          });
-
-          if (btnClose) btnClose.addEventListener('click', closeModal);
-          if (overlay) overlay.addEventListener('click', closeModal);
-
-          // Permet de fermer la pop-up en appuyant sur la touche "Échap" (Esc) du clavier
-          document.addEventListener('keydown', (e) => {
-              if (e.key === 'Escape' && !modal.classList.contains('pointer-events-none')) {
-                  closeModal();
-              }
-          });
-      });
-  </script>
-
 </body>
 </html>
