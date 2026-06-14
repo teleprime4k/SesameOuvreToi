@@ -762,69 +762,72 @@
           )}
 
           {/* En-tête (Header) avec couleur de fond dynamique personnalisable */}
-          <header className="sticky top-0 z-40 bg-white/90 custom-header-bg backdrop-blur-md border-b border-sesame-100 px-6 py-4 transition-all">
-            <div className="max-w-7xl mx-auto flex justify-between items-center">
-              
-              {/* Logo personnalisé dynamique avec le nouveau design S SVG de l'image */}
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-                <SesameLogo className="w-12 h-12" />
-                <div className="text-left">
-                  <h1 className="text-2xl font-black tracking-wider text-sesame-950 flex items-center gap-1">
-                    SÉSAME <span className="text-xs font-semibold bg-sesame-100 text-sesame-700 px-2 py-0.5 rounded-full">SERVICES</span>
-                  </h1>
-                  <p className="text-[10px] text-sesame-600 tracking-widest uppercase font-bold">Ouvrez vos portes</p>
-                </div>
-              </div>
+<header className="sticky top-0 z-40 bg-white/90 custom-header-bg backdrop-blur-md border-b border-sesame-100 px-4 sm:px-6 py-4 transition-all">
+  <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
+    
+    {/* Logo personnalisé dynamique avec le nouveau design S SVG de l'image */}
+    <div className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0" onClick={() => navigateTo('home')}>
+      <SesameLogo className="w-9 h-9 sm:w-12 sm:h-12" />
+      <div className="text-left">
+        <h1 className="text-lg sm:text-2xl font-black tracking-wider text-sesame-950 flex items-center gap-1 leading-none">
+          SÉSAME <span className="text-[9px] sm:text-xs font-semibold bg-sesame-100 text-sesame-700 px-1.5 sm:px-2 py-0.5 rounded-full">SERVICES</span>
+        </h1>
+        <p className="text-[8px] sm:text-[10px] text-sesame-600 tracking-widest uppercase font-bold mt-0.5">Ouvrez vos portes</p>
+      </div>
+    </div>
 
-              {/* Navigation : Le bouton Tableau de Bord au centre a été supprimé */}
-              <nav className="hidden md:flex items-center gap-8">
-                <button 
-                  onClick={() => navigateTo('home')} 
-                  className={`text-sm font-medium transition-colors ${activeTab === 'home' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
-                  Accueil
-                </button>
-                <button 
-                  onClick={() => navigateTo('services')} 
-                  className={`text-sm font-medium transition-colors ${activeTab === 'services' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
-                  Piliers de Services
-                </button>
-              </nav>
+    {/* Navigation : Le bouton Tableau de Bord au centre a été supprimé */}
+    <nav className="hidden md:flex items-center gap-8">
+      <button 
+        onClick={() => navigateTo('home')} 
+        className={`text-sm font-medium transition-colors ${activeTab === 'home' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
+        Accueil
+      </button>
+      <button 
+        onClick={() => navigateTo('services')} 
+        className={`text-sm font-medium transition-colors ${activeTab === 'services' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
+        Piliers de Services
+      </button>
+    </nav>
 
-              {/* Actions de Session */}
-              <div className="flex items-center gap-4">
-                {user ? (
-                  <div className="flex items-center gap-3">
-                    {/* BOUTON ADRESSE EMAIL UNIQUE ET INTERACTIF */}
-                    <div 
-                      onClick={() => navigateTo('dashboard')}
-                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl transition border cursor-pointer select-none ${
-                        activeTab === 'dashboard' 
-                          ? 'bg-sesame-100 border-sesame-400 text-sesame-950 font-bold' 
-                          : 'bg-sesame-50 hover:bg-sesame-100 text-sesame-800 border-sesame-200'
-                      }`}>
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                      </span>
-                      {/* Utilisation de text-sesame-900 pour garantir un contraste optimal et que l'e-mail soit parfaitement lisible */}
-                      <span className="max-w-[150px] truncate font-mono text-xs text-sesame-900 font-semibold">{user.email}</span>
-                    </div>
-                    <button 
-                      onClick={handleLogout}
-                      className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-4 py-2 rounded-xl transition border border-rose-200 flex items-center gap-1.5">
-                      Déconnexion
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
-                    className="bg-sesame-800 hover:bg-sesame-900 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2">
-                    Connexion
-                  </button>
-                )}
-              </div>
-            </div>
-          </header>
+    {/* Actions de Session */}
+    <div className="flex items-center gap-2 sm:gap-4 mini-session-container">
+      {user ? (
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* BOUTON ADRESSE EMAIL UNIQUE ET INTERACTIF */}
+          <div 
+            onClick={() => navigateTo('dashboard')}
+            className={`flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-xl transition border cursor-pointer select-none max-w-[130px] xs:max-w-[18px] sm:max-w-xs overflow-hidden ${
+              activeTab === 'dashboard' 
+                ? 'bg-sesame-100 border-sesame-400 text-sesame-950 font-bold' 
+                : 'bg-sesame-50 hover:bg-sesame-100 text-sesame-800 border-sesame-200'
+            }`}>
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            {/* max-w-[80px] sur mobile évite que l'email ne pousse le bouton déconnexion */}
+            <span className="max-w-[70px] xs:max-w-[100px] sm:max-w-[150px] truncate font-mono text-[11px] sm:text-xs text-sesame-900 font-semibold">
+              {user.email}
+            </span>
+          </div>
+          
+          <button 
+            onClick={handleLogout}
+            className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-xl transition border border-rose-200 flex items-center gap-1.5 shrink-0">
+            Déconnexion
+          </button>
+        </div>
+      ) : (
+        <button 
+          onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
+          className="bg-sesame-800 hover:bg-sesame-900 text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2 shrink-0">
+          Connexion
+        </button>
+      )}
+    </div>
+  </div>
+</header>
 
           <main className="flex-grow">
             
