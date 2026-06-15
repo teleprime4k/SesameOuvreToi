@@ -902,9 +902,9 @@
                       
                       {user ? (
                         <button 
-                          onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 €')}
+                          onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 € / an')}
                           className={`w-full py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 ${userSubscriptions.sesameExpress ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' : 'bg-gradient-to-r from-sesame-500 to-sesame-600 text-white hover:from-sesame-600 hover:to-sesame-700'}`}>
-                          {userSubscriptions.sesameExpress ? "Désactiver l'Option Express" : "Activer pour 80.50 €"}
+                          {userSubscriptions.sesameExpress ? "Désactiver l'Option Express" : "Activer pour 80.50 € / an"}
                         </button>
                       ) : (
                         <button 
@@ -1042,7 +1042,7 @@
                         </div>
                         <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
                           <span className="text-xs font-medium text-slate-400">Option Sésame Express</span>
-                          <span className="text-xs font-black text-emerald-400 tracking-wide bg-[#10B981]/10 px-2.5 py-1 rounded-md border border-[#10B981]/20">80.50 €</span>
+                          <span className="text-xs font-black text-emerald-400 tracking-wide bg-[#10B981]/10 px-2.5 py-1 rounded-md border border-[#10B981]/20">80.50 € / an</span>
                         </div>
                       </div>
                     </div>
@@ -1279,7 +1279,7 @@
                               </div>
                               <p className="text-[11px] text-amber-800 mt-1">Garantie de traitement ultra-rapide sous 2 heures.</p>
                             </div>
-                            <span className="text-sm font-black text-amber-950 shrink-0">80.50 €</span>
+                            <span className="text-sm font-black text-amber-950 shrink-0">80.50 € / an</span>
                           </div>
 
                           <div className="flex justify-between items-center pt-2 border-t border-amber-200/50">
@@ -1287,9 +1287,9 @@
                               Statut : {userSubscriptions.sesameExpress ? 'Activé (Facturé)' : 'Désactivé'}
                             </span>
                             <button 
-                              onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 €')}
+                              onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 € / an')}
                               className={`px-4 py-2 rounded-xl text-xs font-black transition ${userSubscriptions.sesameExpress ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-amber-600 text-white hover:bg-amber-700 shadow'}`}>
-                              {userSubscriptions.sesameExpress ? 'Désactiver' : 'Activer pour 80.50 €'}
+                              {userSubscriptions.sesameExpress ? 'Désactiver' : 'Activer pour 80.50 € / an'}
                             </button>
                           </div>
                         </div>
@@ -1410,7 +1410,7 @@
                         onClick={() => scrollToSection('home', 'sesame-express')} 
                         className="hover:text-amber-300 transition text-left focus:outline-none"
                       >
-                        Sésame Express ⚡ <span className="text-neutral-400 font-normal">(80.50 €)</span>
+                        Sésame Express ⚡ <span className="text-neutral-400 font-normal">(80.50 € / an)</span>
                       </button>
                     </li>
                     <li>Conciergerie Instantanée</li>
