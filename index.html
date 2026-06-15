@@ -462,7 +462,7 @@
         const selectedPillars = [];
         if (quotePillars.digital) selectedPillars.push("Digital & Web");
         if (quotePillars.conseil) selectedPillars.push("Conseil & Aide");
-        if (quotePillars.resteDuMonde) selectedPillars.push("Le Reste du Monde");
+        if (quotePillars.resteDuMonde) selectedPillars.push("Horizon International");
 
         if (selectedPillars.length === 0) {
           showNotification("Veuillez sélectionner au moins un pilier d'intervention.", "warning");
@@ -1017,7 +1017,7 @@
                     </div>
                   </div>
 
-                  {/* PILIER 3: Le Reste du Monde - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
+                  {/* PILIER 3: Horizon International - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
                   <div 
                     id="pilier-reste"
                     onClick={() => trackServiceView("SERVICES Horizon International")}
@@ -1395,7 +1395,7 @@
                         onClick={() => scrollToSection('services', 'pilier-reste')} 
                         className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
                       >
-                        Le Reste du Monde
+                        Horizon International
                       </button>
                     </li>
                   </ul>
@@ -1608,7 +1608,7 @@
                     <span className="text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">Régler →</span>
                   </a>
 
-                  {/* Option 3 : Le Reste du Monde */}
+                  {/* Option 3 : Horizon International */}
                   <a 
                     href="https://payment.sesame.fr/reste-du-monde" 
                     target="_blank" 
