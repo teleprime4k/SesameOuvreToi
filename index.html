@@ -1,1799 +1,1316 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full bg-slate-50">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sésame - Ouvre-toi</title>
-  
-  <!-- Chargement du CDN Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Configuration dynamique de Tailwind CSS basée sur nos variables CSS -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            sesame: {
-              50: 'var(--bg-50)',
-              100: 'var(--bg-100)',
-              200: 'var(--bg-200)',
-              300: 'var(--bg-300)',
-              400: 'var(--primary-400)',
-              500: 'var(--primary-500)',
-              600: 'var(--primary-600)',
-              700: 'var(--primary-700)',
-              800: 'var(--primary-800)',
-              900: 'var(--primary-900)',
-              950: 'var(--primary-950)',
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaSify - Gestion d'abonnements & Services</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
         }
-      }
-    };
-  </script>
-
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <!-- React & Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
-    
-    /* ==========================================================================
-       ESPACE DE PERSONNALISATION DES COULEURS
-       Modifiez simplement les codes ci-dessous pour changer tout le site !
-       ========================================================================== */
-    :root {
-      /* --- 1. COULEUR DE FOND DE L'EN-TÊTE (HEADER) --- */
-      --header-bg: #0C0E2D;    /* Couleur de l'en-tête (ex: #ffffff, #1b1464, etc.) */
-
-      /* --- 2. COULEUR DE FOND DU PIED DE PAGE GÉNÉRAL (FOOTER) --- */
-      --header-bgbas: #0C0E2D; /* Remplacer par la couleur de votre choix pour le pied de page (ex: #1a0f08, #0b132b, etc.) */
-
-      /* --- 3. COULEURS DE FOND CLAIR DU SITE --- */
-      --bg-50: #31187c;        /* Couleur de fond principale de la page */
-      --bg-100: #fbf7ed;       /* Couleur de fond secondaire légèrement plus foncée */
-      --bg-200: #f5ecd5;       /* Couleur de bordure et de légers reliefs */
-      --bg-300: #ebd8ad;       /* Couleur des éléments actifs secondaires */
-      
-      /* --- 4. COULEURS DE MARQUE PRINCIPALES (Le Doré/Bronze Sésame d'origine) --- */
-      --primary-400: #dfbe7f;  /* Doré très clair (barre de défilement) */
-      --primary-500: #d19e51;  /* Doré moyen */
-      --primary-600: #be813b;  /* Doré chaud (Logo Sésame, éléments clés) */
-      --primary-700: #9e622d;  /* Cuivré foncé */
-      --primary-800: #1E293B;  /* Chocolat */
-      --primary-900: #683f21;  /* Chocolat foncé (Boutons au survol) */
-      --primary-950: #dcaaaa;  /* Marron très sombre (Textes forts) */
-
-      /* --- 5. COULEURS DE LA BANNIÈRE D'ACCUEIL (Dégradé bleu/violet moderne d'origine) --- */
-      --hero-grad-1: #1b1464;  /* Bleu royal profond (Haut gauche du Hero) */
-      --hero-grad-2: #2e269c;  /* Bleu violet (Milieu du Hero) */
-      --hero-grad-3: #4f46e5;  /* Violet électrique (Bas droit du Hero) */
-    }
-
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    /* Barre de défilement personnalisée */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: var(--bg-50);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: var(--primary-400);
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--primary-600);
-    }
-
-    /* Style forcé pour l'en-tête basé sur la variable CSS */
-    .custom-header-bg {
-      background-color: var(--header-bg) !important;
-    }
-
-    /* Style forcé pour le pied de page (Footer) basé sur la variable CSS */
-    .custom-footer-bg {
-      background-color: var(--header-bgbas) !important;
-    }
-
-    /* Fond en dégradé dynamique du Hero */
-    .hero-tech-bg {
-      background: linear-gradient(135deg, var(--hero-grad-1) 0%, var(--hero-grad-2) 50%, var(--hero-grad-3) 100%);
-    }
-
-    /* Grille de mise en page / quadrillage graphique blanc transparent */
-    .hero-tech-grid {
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 45px 45px;
-    }
-  </style>
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
 </head>
-<body class="bg-sesame-50 text-sesame-950 min-h-screen">
-
-  <div id="root"></div>
-
-  <!-- SDKs Firebase -->
-  <script type="module" data-type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Configuration Firebase du client
-    const firebaseConfig = {
-      apiKey: "AIzaSyBs4p7kaG0d6GMuMRiThl1W7_ZTncLCBCo",
-      authDomain: "sesameouvretoi-13.firebaseapp.com",
-      projectId: "sesameouvretoi-13",
-      storageBucket: "sesameouvretoi-13.firebasestorage.app",
-      messagingSenderId: "167364948430",
-      appId: "1:167364948430:web:e1874c21b6d39fd412bb9f",
-      measurementId: "G-VRWJPSC723"
-    };
-
-    // Initialisation
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const appId = "sesameouvretoi-13";
-
-    window.FirebaseServices = { auth, db, appId, doc, setDoc, getDoc, collection, addDoc, onSnapshot, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged };
-  </script>
-
-  <!-- Application React -->
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    // Déclaration du tout nouveau composant de logo Sésame basé exactement sur l'image envoyée
-    function SesameLogo({ className = "w-10 h-10" }) {
-      return (
-        <svg className={`${className} shadow-lg rounded-[28%]`} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Dégradé de la bordure lumineuse */}
-          <defs>
-            <linearGradient id="sesameBorderGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#4f46e5" /> {/* Violet / Bleu électrique */}
-              <stop offset="50%" stopColor="#d946ef" /> {/* Magenta / Rose */}
-              <stop offset="100%" stopColor="#f59e0b" /> {/* Doré / Orange chaud */}
-            </linearGradient>
-          </defs>
-          
-          {/* Fond sombre arrondi */}
-          <rect width="512" height="512" rx="140" fill="#070b19" />
-          
-          {/* Bordure stylisée en dégradé */}
-          <rect x="16" y="16" width="480" height="480" rx="124" stroke="url(#sesameBorderGradient)" strokeWidth="20" fill="none" />
-          
-          {/* Lettre S centrale parfaitement proportionnée de couleur jaune/doré */}
-          <text 
-            x="50%" 
-            y="54%" 
-            dominantBaseline="middle" 
-            textAnchor="middle" 
-            fill="#fec033" 
-            fontSize="280" 
-            fontWeight="900" 
-            fontFamily="'Plus Jakarta Sans', 'Arial Black', sans-serif"
-          >
-            S
-          </text>
-        </svg>
-      );
-    }
-
-    // Définition de l'icône de boutique personnalisée en SVG pour correspondre exactement à l'image
-    function StoreIcon() {
-      return (
-        <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
-          <path d="M4 12V22a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V12" />
-          <path d="M2 7h20" />
-          <path d="M12 22V12" />
-          <path d="M3 7a3 3 0 0 1 3-3 3 3 0 0 1 6 0 3 3 0 0 1 6 0 3 3 0 0 1 3 3" />
-        </svg>
-      );
-    }
-
-    // Définition de l'icône d'entraide / poignée de main personnalisée pour correspondre exactement à l'image
-    function HandshakeIcon() {
-      return (
-        <svg className="w-8 h-8 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M16 11V6a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v3" />
-          <path d="M12 10V8a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v3" />
-          <path d="M10 10.5V9a2 2 0 0 0-2-2h0a2 2 0 0 0-2 2v3" />
-          <path d="M6 12v-1.5a1.5 1.5 0 0 0-3 0v4.75a6.75 6.75 0 0 0 6.75 6.75h2.5a6 6 0 0 0 6-6V13" />
-          <path d="M16 14.5a1.5 1.5 0 0 1 3 0V16" />
-        </svg>
-      );
-    }
-
-    // Définition de l'icône Globe Terrestre personnalisée pour correspondre exactement à la troisième image
-    function GlobeIcon() {
-      return (
-        <svg className="w-8 h-8 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-          <path d="M2 12h20" />
-        </svg>
-      );
-    }
-
-    function App() {
-      const [user, setUser] = useState(null);
-      const [loading, setLoading] = useState(true);
-      const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
-      const [showAuthModal, setShowAuthModal] = useState(false);
-      const [activeTab, setActiveTab] = useState('home'); // 'home' | 'services' | 'dashboard'
-      
-      // Formulaires d'authentification
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [fullName, setFullName] = useState('');
-      const [authError, setAuthError] = useState('');
-      const [authSuccess, setAuthSuccess] = useState('');
-
-      // Services Firebase
-      const [services, setServices] = useState(null);
-
-      // États Firestore synchronisés
-      const [userSubscriptions, setUserSubscriptions] = useState({
-        digital: false,
-        conseil: false,
-        resteDuMonde: false,
-        sesameExpress: false
-      });
-      const [userActivities, setUserActivities] = useState([]);
-      const [actionLoading, setActionLoading] = useState(false);
-      const [notif, setNotif] = useState(null);
-      
-      // Modal d'espace de règlement
-      const [showPaymentModal, setShowPaymentModal] = useState(false);
-
-      // MODALE DEVIS GRATUIT ET FORMULAIRE
-      const [showQuoteModal, setShowQuoteModal] = useState(false);
-      const [quotePillars, setQuotePillars] = useState({ digital: false, conseil: false, resteDuMonde: false });
-      const [quoteName, setQuoteName] = useState('');
-      const [quoteEmail, setQuoteEmail] = useState('');
-      const [quotePhone, setQuotePhone] = useState('');
-      const [quoteMessage, setQuoteMessage] = useState('');
-      
-      // ÉTAT DE LA SECTION QUESTIONS FRÉQUENTES (FAQ)
-      const [openFaqIndex, setOpenFaqIndex] = useState(null);
-
-      // Liste des questions-réponses pour l'accordéon FAQ
-      const faqData = [
-        {
-          question: "Quels sont les frais annuels de 45 € et à quoi servent-ils ?",
-          answer: "Ces frais annuels obligatoires couvrent l'hébergement hautement sécurisé de votre site sur nos serveurs haute performance, la réservation et le renouvellement de votre nom de domaine personnalisé (ex: maboutique.fr), ainsi que la mise en place de sauvegardes automatiques de vos données."
-        },
-        {
-          question: "L'abonnement Conseil & Aide de 7 €/mois est-il obligatoire ?",
-          answer: "Non, cet abonnement est totalement optionnel. Il est destiné aux créateurs qui souhaitent bénéficier d'un accompagnement personnalisé régulier, d'analyses régulières de leur trafic et d'une aide stratégique continue pour améliorer leur visibilité sur Google."
-        },
-        {
-          question: "Comment se passe la création de mon site après l'envoi du devis ?",
-          answer: "Dès réception de votre demande de devis, un conseiller Sésame vous contacte sous 24h pour affiner vos besoins. Une fois le cahier des charges et le devis validés, notre équipe de spécialistes commence le développement. Vous suivez chaque étape jusqu'à la mise en ligne !"
-        }
-      ];
-      
-      // Variable de référence pour éviter le doublon d'accueil lors de la détection de session automatique
-      const isNewUserRegistered = useRef(false);
-
-      // Récupération des services après chargement du script de module
-      useEffect(() => {
-        const interval = setInterval(() => {
-          if (window.FirebaseServices) {
-            setServices(window.FirebaseServices);
-            clearInterval(interval);
-          }
-        }, 100);
-        return () => clearInterval(interval);
-      }, []);
-
-      // Écoute de l'état d'authentification Firebase
-      useEffect(() => {
-        if (!services) return;
-        const { auth, onAuthStateChanged } = services;
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-          if (currentUser) {
-            setUser(currentUser);
-            setLoading(false);
-            
-            // Fermeture automatique de la petite fenêtre (modal) lors d'une connexion ou inscription réussie
-            setShowAuthModal(false);
-            
-            // Pré-remplir l'email dans le devis
-            setQuoteEmail(currentUser.email || '');
-            
-            // Différencier l'accueil entre une inscription toute fraîche et une session restaurée
-            if (isNewUserRegistered.current) {
-              showNotification("Bienvenue sur Sésame ! Votre compte a été créé.", "success");
-              isNewUserRegistered.current = false; // Réinitialisation du flag
-            } else {
-              showNotification("Heureux de vous revoir sur Sésame !", "success");
-              logUserActivity(currentUser.uid, "Connexion automatique", "Session utilisateur restaurée avec succès");
-            }
-          } else {
-            // Nettoyage complet à la déconnexion
-            setUser(null);
-            setUserSubscriptions({
-              digital: false,
-              conseil: false,
-              resteDuMonde: false,
-              sesameExpress: false
-            });
-            setUserActivities([]);
-            setQuoteEmail('');
-            setLoading(false);
-          }
-        });
-        return () => unsubscribe();
-      }, [services]);
-
-      // Garde de sécurité : Empêcher l'accès au Tableau de bord si déconnecté
-      useEffect(() => {
-        if (!user && activeTab === 'dashboard') {
-          setActiveTab('home');
-        }
-      }, [user, activeTab]);
-
-      // Écoute en temps réel des abonnements et activités
-      useEffect(() => {
-        if (!services || !user) {
-          setUserSubscriptions({
-            digital: false,
-            conseil: false,
-            resteDuMonde: false,
-            sesameExpress: false
-          });
-          setUserActivities([]);
-          return;
-        }
-
-        const { db, appId, doc, collection, onSnapshot } = services;
-
-        // Écoute des abonnements
-        const subDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'subscriptions', 'current');
-        const unsubSub = onSnapshot(subDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setUserSubscriptions({
-              digital: !!data.digital,
-              conseil: !!data.conseil,
-              resteDuMonde: !!data.resteDuMonde,
-              sesameExpress: !!data.sesameExpress
-            });
-          } else {
-            setUserSubscriptions({
-              digital: false,
-              conseil: false,
-              resteDuMonde: false,
-              sesameExpress: false
-            });
-          }
-        }, (err) => {
-          console.error("Erreur de chargement des abonnements :", err);
-        });
-
-        // Écoute du flux d'activités
-        const actColRef = collection(db, 'artifacts', appId, 'users', user.uid, 'activities');
-        const unsubAct = onSnapshot(actColRef, (querySnap) => {
-          const acts = [];
-          querySnap.forEach((doc) => {
-            acts.push({ id: doc.id, ...doc.data() });
-          });
-          acts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-          setUserActivities(acts);
-        }, (err) => {
-          console.error("Erreur de chargement de l'historique :", err);
-        });
-
-        return () => {
-          unsubSub();
-          unsubAct();
-        };
-      }, [services, user]);
-
-      // Afficher une notification
-      const showNotification = (message, type = "info") => {
-        setNotif({ message, type });
-        setTimeout(() => setNotif(null), 4000);
-      };
-
-      // Enregistrer une activité
-      const logUserActivity = async (userId, actionTitle, description = "") => {
-        if (!services || !userId) return;
-        const { db, appId, collection, addDoc } = services;
-        try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', userId, 'activities'), {
-            title: actionTitle,
-            description: description,
-            timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent
-          });
-        } catch (e) {
-          console.error("Erreur d'enregistrement d'activité :", e);
-        }
-      };
-
-      // Envoyer l'état complet des services à Formspree
-      const sendUpdateToFormspree = async (updatedSubs, serviceName, actionWord) => {
-        try {
-          const payload = {
-            message: `Mise à jour des services Sésame`,
-            client_email: user?.email || "Inconnu",
-            client_uid: user?.uid || "Inconnu",
-            action_effectuee: `${actionWord} du service : ${serviceName}`,
-            date_action: new Date().toLocaleString('fr-FR'),
-            services_actifs: {
-              digital_web: updatedSubs.digital ? "ACTIF ✓" : "INACTIF",
-              conseil_aide: updatedSubs.conseil ? "ACTIF ✓" : "INACTIF",
-              reste_du_monde: updatedSubs.resteDuMonde ? "ACTIF ✓" : "INACTIF",
-              sesame_express: updatedSubs.sesameExpress ? "ACTIF ✓" : "INACTIF"
-            }
-          };
-
-          await fetch('https://formspree.io/f/xbdazkbd', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-          
-          console.log("Mise à jour envoyée avec succès à Formspree !");
-        } catch (err) {
-          console.error("Erreur d'envoi vers Formspree :", err);
-        }
-      };
-
-      // SOUMETTRE LA DEMANDE DE DEVIS GRATUIT
-      const handleQuoteSubmit = async (e) => {
-        e.preventDefault();
-        
-        // Extraire les piliers sélectionnés
-        const selectedPillars = [];
-        if (quotePillars.digital) selectedPillars.push("Digital & Web");
-        if (quotePillars.conseil) selectedPillars.push("Conseil & Aide");
-        if (quotePillars.resteDuMonde) selectedPillars.push("Horizon International");
-
-        if (selectedPillars.length === 0) {
-          showNotification("Veuillez sélectionner au moins un pilier d'intervention.", "warning");
-          return;
-        }
-
-        try {
-          const payload = {
-            message: "Nouvelle demande de Devis Gratuit Sésame",
-            client_name: quoteName,
-            client_email: quoteEmail,
-            client_phone: quotePhone,
-            selected_pillars: selectedPillars.join(", "),
-            project_details: quoteMessage,
-            date_request: new Date().toLocaleString('fr-FR')
-          };
-
-          // Envoi au service de formulaire Formspree
-          await fetch('https://formspree.io/f/xbdazkbd', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          // Enregistrer dans Firestore pour le suivi d'activité du client connecté
-          if (user) {
-            await logUserActivity(
-              user.uid, 
-              "Demande de Devis Gratuit", 
-              `Piliers sélectionnés : ${selectedPillars.join(", ")}. Message : ${quoteMessage.substring(0, 60)}...`
-            );
-          }
-
-          showNotification("Votre demande de devis gratuit a été envoyée avec succès !", "success");
-          setShowQuoteModal(false);
-
-          // Réinitialisation du formulaire
-          setQuotePillars({ digital: false, conseil: false, resteDuMonde: false });
-          setQuoteName('');
-          setQuotePhone('');
-          setQuoteMessage('');
-          if (!user) setQuoteEmail('');
-        } catch (err) {
-          console.error("Erreur d'envoi du devis :", err);
-          showNotification("Une erreur s'est produite lors de l'envoi du formulaire.", "error");
-        }
-      };
-
-      // Inscription
-      const handleRegister = async (e) => {
-        e.preventDefault();
-        if (!services) return;
-        setAuthError('');
-        setAuthSuccess('');
-
-        // Activer le flag d'inscription pour l'écouteur onAuthStateChanged
-        isNewUserRegistered.current = true;
-
-        const { auth, createUserWithEmailAndPassword, db, appId, doc, setDoc } = services;
-        try {
-          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          const newUser = userCredential.user;
-
-          // Profil initial
-          await setDoc(doc(db, 'artifacts', appId, 'users', newUser.uid, 'profile', 'info'), {
-            fullName: fullName || "Client Sésame",
-            email: email,
-            createdAt: new Date().toISOString()
-          });
-
-          // Abonnements initiaux
-          const initialSubs = {
-            digital: false,
-            conseil: false,
-            resteDuMonde: false,
-            sesameExpress: false
-          };
-          
-          await setDoc(doc(db, 'artifacts', appId, 'users', newUser.uid, 'subscriptions', 'current'), initialSubs);
-
-          // Activité initiale
-          await logUserActivity(newUser.uid, "Création du compte Sésame", `Bienvenue chez Sésame, ${fullName || email}`);
-          
-          // Formspree
-          await sendUpdateToFormspree(initialSubs, "Création de compte", "Création");
-
-          setAuthSuccess('Votre compte a été créé avec succès !');
-          
-          setShowAuthModal(false);
-          setActiveTab('dashboard');
-          
-          setEmail('');
-          setPassword('');
-          setFullName('');
-        } catch (error) {
-          isNewUserRegistered.current = false;
-          setAuthError(getFriendlyErrorMessage(error.code));
-        }
-      };
-
-      // Connexion
-      const handleLogin = async (e) => {
-        e.preventDefault();
-        if (!services) return;
-        setAuthError('');
-        setAuthSuccess('');
-
-        const { auth, signInWithEmailAndPassword } = services;
-        try {
-          const userCredential = await signInWithEmailAndPassword(auth, email, password);
-          await logUserActivity(userCredential.user.uid, "Connexion manuelle", "Session initiée avec succès");
-          
-          setShowAuthModal(false);
-          setActiveTab('dashboard');
-          
-          setEmail('');
-          setPassword('');
-        } catch (error) {
-          setAuthError(getFriendlyErrorMessage(error.code));
-        }
-      };
-
-      // Déconnexion complète
-      const handleLogout = async () => {
-        if (!services || !user) return;
-        const { auth, signOut } = services;
-        
-        logUserActivity(user.uid, "Déconnexion de l'utilisateur", "L'utilisateur s'est déconnecté manuellement de sa session.");
-
-        try {
-          setActiveTab('home');
-          setUser(null);
-          setUserSubscriptions({
-            digital: false,
-            conseil: false,
-            resteDuMonde: false,
-            sesameExpress: false
-          });
-          setUserActivities([]);
-
-          await signOut(auth);
-          showNotification("Déconnexion sécurisée réussie. À bientôt sur Sésame !", "info");
-        } catch (error) {
-          console.error("Erreur de déconnexion :", error);
-          setUser(null);
-          setActiveTab('home');
-          showNotification("Déconnexion locale effectuée.", "warning");
-        }
-      };
-
-      // Activer / Désactiver un service - LIÉ CORRECTEMENT ET VÉRIFIÉ POUR LE LOG D'ACTIVITÉ EN TEMPS RÉEL
-      const toggleService = async (serviceKey, serviceName, costInfo = "") => {
-        if (!user) {
-          setShowAuthModal(true);
-          showNotification("Veuillez vous connecter pour gérer vos services.", "warning");
-          return;
-        }
-
-        setActionLoading(true);
-        const { db, appId, doc, setDoc } = services;
-        
-        // Déterminer le statut final (cible) après l'action du clic
-        const nextStatus = !userSubscriptions[serviceKey];
-
-        const updatedSubs = {
-          digital: serviceKey === 'digital' ? nextStatus : !!userSubscriptions.digital,
-          conseil: serviceKey === 'conseil' ? nextStatus : !!userSubscriptions.conseil,
-          resteDuMonde: serviceKey === 'resteDuMonde' ? nextStatus : !!userSubscriptions.resteDuMonde,
-          sesameExpress: serviceKey === 'sesameExpress' ? nextStatus : !!userSubscriptions.sesameExpress
-        };
-
-        try {
-          // 1. Sauvegarde dans Firestore des abonnements mis à jour
-          await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'subscriptions', 'current'), updatedSubs);
-          
-          // Formulation claire et propre de l'action de modification de l'abonnement pour l'historique
-          const actionWord = nextStatus ? "Activation" : "Désactivation";
-          const costDesc = (nextStatus && costInfo) ? ` au prix de ${costInfo}` : "";
-          
-          // 2. Écriture immédiate du log d'activité sur Firestore
-          await logUserActivity(
-            user.uid, 
-            `${actionWord} : ${serviceName}`, 
-            `L'utilisateur a configuré le service "${serviceName}" sur ${nextStatus ? 'ACTIF' : 'INACTIF'}${costDesc}.`
-          );
-
-          // 3. Notification par formulaire externe (Formspree)
-          await sendUpdateToFormspree(updatedSubs, serviceName, actionWord);
-
-          showNotification(
-            nextStatus 
-              ? `Service "${serviceName}" activé avec succès !` 
-              : `Service "${serviceName}" désactivé.`,
-            nextStatus ? "success" : "info"
-          );
-        } catch (error) {
-          console.error("Erreur de mise à jour :", error);
-          showNotification("Une erreur est survenue lors de la mise à jour.", "error");
-        } finally {
-          setActionLoading(false);
-        }
-      };
-
-      // Suivre la consultation des services
-      const trackServiceView = (serviceName) => {
-        if (user) {
-          logUserActivity(user.uid, `Consultation de service`, `L'utilisateur consulte les détails de : ${serviceName}`);
-        }
-      };
-
-      // Tracer le clic sur un bouton de paiement
-      const handlePaymentClick = (serviceName) => {
-        if (user) {
-          logUserActivity(user.uid, "Accès Paiement", `L'utilisateur a cliqué sur le bouton de règlement pour : ${serviceName}`);
-        }
-      };
-
-      // GESTION DU CLIC SUR LA FAQ
-      const toggleFaqItem = (index) => {
-        const isOpening = openFaqIndex !== index;
-        setOpenFaqIndex(isOpening ? index : null);
-        if (user) {
-          logUserActivity(
-            user.uid, 
-            isOpening ? "Consultation FAQ" : "Fermeture FAQ", 
-            `L'utilisateur a ${isOpening ? 'ouvert' : 'fermé'} la question : "${faqData[index].question}"`
-          );
-        }
-      };
-
-      // Traduction des messages d'erreur Firebase
-      const getFriendlyErrorMessage = (code) => {
-        switch (code) {
-          case 'auth/invalid-email': return 'Adresse e-mail invalide.';
-          case 'auth/user-disabled': return 'Ce compte a été désactivé.';
-          case 'auth/user-not-found': return 'Aucun utilisateur trouvé avec cette adresse.';
-          case 'auth/wrong-password': return 'Mot de passe incorrect.';
-          case 'auth/email-already-in-use': return 'Cette adresse e-mail est déjà utilisée.';
-          case 'auth/weak-password': return 'Le mot de passe doit contenir au moins 6 caractères.';
-          default: return 'Une erreur est survenue. Veuillez réessayer.';
-        }
-      };
-
-      const navigateTo = (tabName) => {
-        setActiveTab(tabName);
-        if (user) {
-          logUserActivity(user.uid, `Navigation de l'utilisateur`, `Affichage de l'onglet : ${tabName === 'home' ? 'Accueil' : tabName === 'services' ? 'Nos 3 Domaines d\'Intervention' : 'Tableau de Bord / Espace Client'}`);
-        }
-      };
-
-      // FONCTION DE DÉFILEMENT FLUIDE ET INTERACTIF VERS UNE SECTION DEPUIS LES CLICS FOOTER
-      const scrollToSection = (tabName, elementId) => {
-        setActiveTab(tabName);
-        setTimeout(() => {
-          const element = document.getElementById(elementId);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 150);
-        if (user) {
-          logUserActivity(user.uid, "Navigation rapide", `Défilement vers la section : ${elementId}`);
-        }
-      };
-
-      if (loading) {
-        return (
-          <div className="flex items-center justify-center min-h-screen bg-sesame-50 text-sesame-950">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 border-4 border-sesame-400 border-t-sesame-800 rounded-full animate-spin mx-auto"></div>
-              <p className="text-sm font-semibold tracking-wider text-sesame-700 uppercase">Sésame s'ouvre...</p>
-            </div>
-          </div>
-        );
-      }
-
-      // Préparation de la liste des abonnements actifs pour l'affichage dynamique
-      const activeSubscriptionsList = [];
-      if (userSubscriptions.digital) activeSubscriptionsList.push({ id: 'digital', name: "SERVICES Digital & Web", desc: "Création e-commerce premium active.", icon: "💻" });
-      if (userSubscriptions.conseil) activeSubscriptionsList.push({ id: 'conseil', name: "SERVICES Conseil & Aide", desc: "Accompagnement et Propulsion Google SEO.", icon: "🤝" });
-      if (userSubscriptions.resteDuMonde) activeSubscriptionsList.push({ id: 'resteDuMonde', name: "SERVICES Horizon International", desc: "Conciergerie et requêtes sur-mesure d'exception.", icon: "🌍" });
-      if (userSubscriptions.sesameExpress) activeSubscriptionsList.push({ id: 'sesameExpress', name: "Option Sésame Express", desc: "Traitement prioritaire ultra-rapide sous 2h actif.", icon: "⚡" });
-
-      return (
-        <div className="flex flex-col min-h-screen justify-between animate-fade-in">
-          
-          {/* Notifications */}
-          {notif && (
-            <div className="fixed top-5 right-5 z-50 flex items-center p-4 rounded-xl shadow-2xl border transition-all duration-300 max-w-sm animate-bounce bg-white border-sesame-200 text-sesame-900">
-              <span className={`mr-3 p-1 rounded-full text-white ${notif.type === 'success' ? 'bg-emerald-500' : 'bg-sesame-500'}`}>
-                <i className="w-4 h-4 flex items-center justify-center font-bold">✓</i>
-              </span>
-              <p className="text-sm font-semibold">{notif.message}</p>
-            </div>
-          )}
-
-          {/* En-tête (Header) avec couleur de fond dynamique personnalisable */}
-<header className="sticky top-0 z-40 bg-white/90 custom-header-bg backdrop-blur-md border-b border-sesame-100 px-4 sm:px-6 py-4 transition-all">
-  <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
-    
-    {/* Logo personnalisé dynamique avec le nouveau design S SVG de l'image */}
-    <div className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0" onClick={() => navigateTo('home')}>
-      <SesameLogo className="w-9 h-9 sm:w-12 sm:h-12" />
-      <div className="text-left">
-        <h1 className="text-lg sm:text-2xl font-black tracking-wider text-sesame-950 flex items-center gap-1 leading-none">
-          SÉSAME <span className="text-[9px] sm:text-xs font-semibold bg-sesame-100 text-sesame-700 px-1.5 sm:px-2 py-0.5 rounded-full">SERVICES</span>
-        </h1>
-        <p className="text-[8px] sm:text-[10px] text-sesame-600 tracking-widest uppercase font-bold mt-0.5">Ouvrez vos portes</p>
-      </div>
-    </div>
-
-    {/* Navigation : Le bouton Tableau de Bord au centre a été supprimé */}
-    <nav className="hidden md:flex items-center gap-8">
-      <button 
-        onClick={() => navigateTo('home')} 
-        className={`text-sm font-medium transition-colors ${activeTab === 'home' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
-        Accueil
-      </button>
-      <button 
-        onClick={() => navigateTo('services')} 
-        className={`text-sm font-medium transition-colors ${activeTab === 'services' ? 'text-sesame-700 font-bold' : 'text-sesame-600 hover:text-sesame-950'}`}>
-        Services
-      </button>
-    </nav>
-
-    {/* Actions de Session */}
-    <div className="flex items-center gap-2 sm:gap-4 mini-session-container">
-      {user ? (
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* BOUTON ADRESSE EMAIL UNIQUE ET INTERACTIF */}
-          <div 
-            onClick={() => navigateTo('dashboard')}
-            className={`flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-xl transition border cursor-pointer select-none max-w-[130px] xs:max-w-[18px] sm:max-w-xs overflow-hidden ${
-              activeTab === 'dashboard' 
-                ? 'bg-sesame-100 border-sesame-400 text-sesame-950 font-bold' 
-                : 'bg-sesame-50 hover:bg-sesame-100 text-sesame-800 border-sesame-200'
-            }`}>
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            {/* max-w-[80px] sur mobile évite que l'email ne pousse le bouton déconnexion */}
-            <span className="max-w-[70px] xs:max-w-[100px] sm:max-w-[150px] truncate font-mono text-[11px] sm:text-xs text-sesame-900 font-semibold">
-              {user.email}
-            </span>
-          </div>
-          
-          <button 
-             onClick={handleLogout}
-             className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] sm:text-xs font-bold px-3 sm:px-4 py-2 rounded-xl transition border border-rose-200 flex items-center gap-1.5 shrink-0">  
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 sm:w-4 sm:h-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-            </svg>
-          <span class="hidden sm:inline">Déconnexion</span>
-           </button>
-        </div>
-      ) : (
-        <button 
-          onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
-          className="bg-sesame-800 hover:bg-sesame-900 text-white text-xs sm:text-sm font-bold px-4 sm:px-5 py-2.5 rounded-xl transition shadow-lg flex items-center gap-2 shrink-0">
-          Connexion
-        </button>
-      )}
-    </div>
-  </div>
-</header>
-
-          <main className="flex-grow">
-            
-            {/* Section Accueil */}
-            {activeTab === 'home' && (
-              <div className="relative overflow-hidden py-20 px-6 hero-tech-bg hero-tech-grid text-white">
-                <div className="max-w-7xl mx-auto grid md:grid-cols-12 gap-12 items-center relative z-10">
-                  <div className="md:col-span-7 space-y-6 text-left">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/15 text-amber-300 rounded-full text-xs font-bold tracking-wide uppercase">
-                      🔑 SÉSAME : Votre clé de réussite
-                    </div>
-                    <h2 className="text-4xl sm:text-6xl font-black text-white leading-tight">
-                      Une infinité de solutions à votre portée
-                    </h2>
-                    <p className="text-lg text-slate-200 leading-relaxed max-w-2xl mx-auto md:mx-0">
-                      Explorez nos 3 domaines d'expertise, conçus pour vous libérer du temps et propulser vos projets. Du défi digital le plus technique au soutien personnalisé, Sésame s'impose comme le partenaire idéal de votre quotidien.
-                    </p>
-                    <div className="flex flex-wrap gap-4 pt-4 items-center justify-center md:justify-start">
-                      <button 
-                        onClick={() => navigateTo('services')}
-                        className="bg-sesame-600 hover:bg-sesame-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl transition transform hover:-translate-y-0.5">
-                        Découvrez nos domaines
-                      </button>
-
-                      {/* BOUTON D'ESPACE DE RÈGLEMENT */}
-                      <button 
-                        onClick={() => setShowPaymentModal(true)}
-                        className="bg-slate-900 hover:bg-slate-950 text-amber-400 font-bold px-8 py-4 rounded-2xl shadow-xl transition transform hover:-translate-y-0.5 border border-amber-400/40 flex items-center gap-2.5">
-                        | 💳 Espace de Règlement
-                      </button>
-
-                      {/* BOUTON DEMANDER UN DEVIS GRATUIT */}
-                      <button 
-                        onClick={() => {
-                          if (user) {
-                            logUserActivity(user.uid, "Clic Bouton Devis", "L'utilisateur a ouvert le formulaire de devis gratuit.");
-                          }
-                          setShowQuoteModal(true);
-                        }}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-4 rounded-2xl shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2.5 border border-emerald-500/20">
-                        📝 Devis Gratuit
-                      </button>
-
-                      {!user && (
-                        <button 
-                          onClick={() => { setShowAuthModal(true); setAuthMode('register'); }}
-                          className="bg-white hover:bg-sesame-50 text-slate-900 font-bold px-8 py-4 rounded-2xl border border-sesame-200 shadow-sm transition transform hover:-translate-y-0.5">
-                          S'inscrire gratuitement
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-5 relative">
-                    {/* ENCART SESAME EXPRESS LIÉ DYNAMIOUEMENT AVEC ID POUR LE DÉFILEMENT */}
-                    <div id="sesame-express" className="bg-white p-8 rounded-3xl shadow-2xl border border-sesame-100 relative z-10 space-y-6 text-slate-950 scroll-mt-20">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1 text-left">
-                          <p className="text-xs font-bold uppercase tracking-wider text-sesame-500">Service exclusif</p>
-                          <h3 className="text-2xl font-black text-sesame-900">Sésame Express ⚡</h3>
-                        </div>
-                        <span className="bg-amber-100 text-amber-800 text-sm font-black px-3 py-1.5 rounded-xl border border-amber-200">
-                          80,50 €
-                        </span>
-                      </div>
-                      <p className="text-sm text-sesame-600 leading-relaxed text-left">
-                        Besoin d'une solution immédiate pour vos besoins urgents ? Activez l'option Sésame Express et bénéficiez d'une priorisation absolue sur toutes vos demandes sous 2 heures garanties.
-                      </p>
-                      
-                      {user ? (
-                        <button 
-                          onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 € / an')}
-                          className={`w-full py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2 ${userSubscriptions.sesameExpress ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' : 'bg-gradient-to-r from-sesame-500 to-sesame-600 text-white hover:from-sesame-600 hover:to-sesame-700'}`}>
-                          {userSubscriptions.sesameExpress ? "Désactiver l'Option Express" : "Activer pour 80.50 € / an"}
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
-                          className="w-full bg-sesame-800 hover:bg-sesame-900 text-white font-bold py-4 rounded-2xl transition flex items-center justify-center gap-2">
-                          Se connecter pour Activer
-                        </button>
-                      )}
-                    </div>
-                    
-                    <div className="absolute -top-6 -right-6 w-72 h-72 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-2xl opacity-70 animate-pulse"></div>
-                    <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-2xl opacity-50 animate-pulse"></div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Section Services */}
-            {(activeTab === 'home' || activeTab === 'services') && (
-              <section className="py-16 px-6 max-w-7xl mx-auto space-y-12">
-                <div className="text-center space-y-4">
-                  <h3 className="text-3xl sm:text-5xl font-black text-sesame-950">
-                    Nos 3 Domaines d'Intervention
-                  </h3>
-                  <p className="text-sesame-600 max-w-2xl mx-auto text-base">
-                    Chaque domaine rassemble un éventail d'expertises uniques, alignées sur vos exigences personnelles et professionnelles.
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-8 items-stretch">
-                  
-                  {/* PILIER 1: Digital & Web - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
-                  <div 
-                    id="pilier-digital"
-                    onClick={() => trackServiceView("SERVICES Digital & Web")}
-                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition duration-500 cursor-pointer font-sans scroll-mt-24">
-                    <div className="space-y-6 text-left">
-                      
-                      <div className="w-16 h-16 rounded-[22px] border border-slate-700/60 bg-slate-900/40 flex items-center justify-center shadow-lg">
-                        <StoreIcon />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h4 className="text-2xl font-bold tracking-tight text-white">SERVICES Digital & Web</h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">
-                          Création complète de votre site E-commerce sur-mesure. Vendez en ligne avec une URL personnalisée et un design unique qui sera créé selon vos goûts.
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2.5 pt-2">
-                        <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
-                          <span className="text-xs font-medium text-slate-400">Création de site</span>
-                          <span className="text-xs font-black text-[#6366F1] tracking-wide bg-[#6366F1]/10 px-2.5 py-1 rounded-md border border-[#6366F1]/20">Sur Devis</span>
-                        </div>
-                        <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
-                          <span className="text-xs font-medium text-slate-400">Abonnement URL/Serveur</span>
-                          <span className="text-xs font-black text-amber-400 tracking-wide bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">45€ / an</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-slate-500">Service Principal</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleService('digital', 'SERVICES Digital & Web'); }}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs transition ${userSubscriptions.digital ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/30' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'}`}>
-                        {userSubscriptions.digital ? 'Abonné ✓' : 'S\'abonner'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* PILIER 2: Conseil & Aide - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
-                  <div 
-                    id="pilier-conseil"
-                    onClick={() => trackServiceView("SERVICES Conseil & Aide")}
-                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(16,185,129,0.2)] transition duration-500 cursor-pointer relative font-sans scroll-mt-24">
-                    
-                    <div className="absolute top-6 right-6 bg-amber-500/10 text-amber-400 text-[10px] font-black tracking-wider px-3 py-1 rounded-full border border-amber-500/20 uppercase">
-                      Populaire
-                    </div>
-
-                    <div className="space-y-6 text-left">
-                      
-                      <div className="w-16 h-16 rounded-[22px] border border-slate-700/60 bg-slate-900/40 flex items-center justify-center shadow-lg">
-                        <HandshakeIcon />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h4 className="text-2xl font-bold tracking-tight text-white">SERVICES Conseil & Aide</h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">
-                          L'accompagnement indispensable après lancement. Nous vous aidons à piloter, promouvoir et optimiser votre site pour le hisser au sommet de Google.
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2.5 pt-2">
-                        <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
-                          <span className="text-xs font-medium text-slate-400">Accompagnement Premium</span>
-                          <span className="text-xs font-black text-amber-400 tracking-wide bg-amber-400/10 px-2.5 py-1 rounded-md border border-amber-400/20">7€ / mois</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-slate-500">Formule Conseil</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleService('conseil', 'SERVICES Conseil & Aide'); }}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs transition ${userSubscriptions.conseil ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/30' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'}`}>
-                        {userSubscriptions.conseil ? 'Abonné ✓' : 'S\'abonner'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* PILIER 3: Horizon International - AJOUT DE L'ID POUR LA LIAISON FOOTER */}
-                  <div 
-                    id="pilier-reste"
-                    onClick={() => trackServiceView("SERVICES Horizon International")}
-                    className="bg-[#0B132B] rounded-3xl p-8 border border-slate-800 shadow-2xl flex flex-col justify-between hover:shadow-[0_0_30px_rgba(99,102,241,0.2)] transition duration-500 cursor-pointer font-sans scroll-mt-24">
-                    <div className="space-y-6 text-left">
-                      
-                      <div className="w-16 h-16 rounded-[22px] border border-slate-700/60 bg-slate-900/40 flex items-center justify-center shadow-lg">
-                        <GlobeIcon />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <h4 className="text-2xl font-bold tracking-tight text-white">SERVICES Horizon International</h4>
-                        <p className="text-sm text-slate-300 leading-relaxed">
-                          La réponse à toutes les demandes qui sortent de l'ordinaire. Conciergerie, logistique, réservations d'exception, mise en relation et résolutions de cas particuliers.
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2.5 pt-2">
-                        <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
-                          <span className="text-xs font-medium text-slate-400">Travaux spécifiques</span>
-                          <span className="text-xs font-black text-[#6366F1] tracking-wide bg-[#6366F1]/10 px-2.5 py-1 rounded-md border border-[#6366F1]/20">Sur Devis</span>
-                        </div>
-                        <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-800/80 bg-slate-950/50">
-                          <span className="text-xs font-medium text-slate-400">Option Sésame Express</span>
-                          <span className="text-xs font-black text-emerald-400 tracking-wide bg-[#10B981]/10 px-2.5 py-1 rounded-md border border-[#10B981]/20">80.50 € / an</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-slate-500">Formule Concierge</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleService('resteDuMonde', 'SERVICES Horizon International'); }}
-                        className={`px-5 py-2.5 rounded-xl font-bold text-xs transition ${userSubscriptions.resteDuMonde ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/30' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md'}`}>
-                        {userSubscriptions.resteDuMonde ? 'Abonné ✓' : 'S\'abonner'}
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              </section>
-            )}
-
-            {/* SECTION QUESTIONS FRÉQUENTES (FAQ) */}
-            {activeTab === 'home' && (
-              <section className="py-16 px-6 max-w-4xl mx-auto space-y-10">
-                <div className="text-center space-y-3">
-                  <h3 className="text-3xl sm:text-4xl font-extrabold text-sesame-950 tracking-tight">
-                    Questions Fréquentes
-                  </h3>
-                  <p className="text-sesame-600 text-sm max-w-2xl mx-auto leading-relaxed">
-                    Toutes les réponses pour démarrer votre projet avec Sésame en toute confiance.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {faqData.map((item, index) => {
-                    const isOpen = openFaqIndex === index;
-                    return (
-                      <div 
-                        key={index} 
-                        className="bg-[#0B132B] rounded-2xl border border-slate-800/80 overflow-hidden shadow-md transition-all duration-300">
-                        <button
-                          onClick={() => toggleFaqItem(index)}
-                          className="w-full px-6 py-5 flex items-center justify-between text-left transition-colors duration-250 hover:bg-slate-900/40 font-sans">
-                          <span className="text-xs sm:text-sm font-bold text-white pr-4 leading-normal font-sans">
-                            {item.question}
-                          </span>
-                          <span className={`text-slate-400 font-bold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                            </svg>
-                          </span>
-                        </button>
-                        
-                        {/* Contenu déployable de la réponse */}
-                        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-40 border-t border-slate-800/50' : 'max-h-0'}`}>
-                          <div className="px-6 py-5 text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-950/20 text-left font-sans">
-                            {item.answer}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* TABLEAU DE BORD CLIENT (Espace Client sécurisé) */}
-            {activeTab === 'dashboard' && user && (
-              <section className="py-12 px-6 max-w-7xl mx-auto space-y-8 animate-fade-in text-left font-sans">
-                
-                {/* Greeting Header */}
-                <div className="bg-gradient-to-r from-sesame-900 to-sesame-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
-                  <div className="relative z-10 space-y-4">
-                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold tracking-wide uppercase">Tableau de Bord Client</span>
-                    <h3 className="text-3xl sm:text-5xl font-black">Bienvenue sur votre Espace Client</h3>
-                    <p className="text-sesame-200 max-w-xl text-sm sm:text-base">
-                      Configurez et gérez vos trois domaines de services ci-dessous. Toutes vos actions sont automatiquement enregistrées et liées à votre profil
-                    </p>
-                    <div className="flex flex-wrap items-center gap-4 pt-2">
-                      <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-xs">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                        <span className="font-semibold text-white">Client ID:</span>
-                        <span className="font-mono text-[11px] text-sesame-300">{user.uid}</span>
-                      </div>
-                      <div className="text-xs text-sesame-300">
-                        Compte connecté : <span className="font-bold text-white">{user.email}</span>
-                      </div>
-                    </div>
-
-                    {/* Déconnexion rapide */}
-                    <div className="pt-2">
-                      <button 
-                        onClick={handleLogout}
-                        className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 shadow-lg border border-red-500/20">
-                        <span>🚪</span> Se Déconnecter de l'Espace Client
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
-                    <span className="text-9xl">🔑</span>
-                  </div>
-                </div>
-
-                {/* RÉSUMÉ DE TOUS LES SERVICES ACTIVÉS / ABONNÉS */}
-                <div className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl space-y-6">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <div>
-                      <h4 className="text-lg font-black text-white flex items-center gap-2">
-                        🌟 Vos Services Sésame Actifs
-                      </h4>
-                      <p className="text-xs text-slate-400 mt-1">Détail en temps réel de tout ce qui est actuellement activé sur votre compte.</p>
-                    </div>
-                    <span className="text-xs bg-indigo-500/10 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/20 font-bold">
-                      {activeSubscriptionsList.length} Actif(s)
-                    </span>
-                  </div>
-
-                  {activeSubscriptionsList.length === 0 ? (
-                    <div className="text-center py-10 space-y-4">
-                      <span className="text-4xl block">✨</span>
-                      <p className="text-sm text-slate-400">Vous n'avez pas encore activé de services d'intervention.</p>
-                      <p className="text-xs text-slate-500">Utilisez la console ci-dessous pour choisir vos piliers Sésame.</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      {activeSubscriptionsList.map((sub) => (
-                        <div key={sub.id} className="p-5 rounded-2xl bg-slate-900/60 border border-indigo-500/20 shadow-md flex flex-col justify-between items-start gap-4">
-                          <div className="space-y-2 flex-grow">
-                            <div className="text-3xl">{sub.icon}</div>
-                            <h5 className="font-bold text-white text-sm leading-snug">{sub.name}</h5>
-                            <p className="text-[11px] text-slate-400 leading-normal">{sub.desc}</p>
-                          </div>
-                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-auto">
-                            Activé ✓
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid lg:grid-cols-12 gap-8">
-                  
-                  {/* Gestion des services (Gauche) */}
-                  <div className="lg:col-span-7 space-y-6">
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sesame-100 shadow-xl space-y-6">
-                      <div className="flex justify-between items-center border-b border-sesame-100 pb-4">
-                        <h4 className="text-lg font-black text-sesame-950 flex items-center gap-2">
-                          📋 Vos Services Actifs & Abonnements
-                        </h4>
-                        <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full animate-pulse">
-                          Synchronisé Cloud
-                        </span>
-                      </div>
-
-                      {actionLoading && (
-                        <div className="p-4 bg-sesame-50 text-sesame-700 text-xs font-semibold rounded-2xl text-center animate-pulse border border-sesame-100">
-                          Mise à jour en cours sur Firestore...
-                        </div>
-                      )}
-
-                      <div className="space-y-4">
-                        
-                        {/* Service 1 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-sesame-100 hover:bg-sesame-50/50 transition gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className={`w-3 h-3 rounded-full ${userSubscriptions.digital ? 'bg-indigo-500 animate-pulse' : 'bg-sesame-300'}`}></span>
-                            <div>
-                              <p className="font-bold text-sm text-sesame-900">SERVICES Digital & Web</p>
-                              <p className="text-[11px] text-sesame-500">Création technique, Web et SEO de haut niveau</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
-                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${userSubscriptions.digital ? 'bg-indigo-100 text-indigo-800' : 'bg-sesame-100 text-sesame-500'}`}>
-                              {userSubscriptions.digital ? 'Actif ✓' : 'Inactif'}
-                            </span>
-                            <button 
-                              onClick={() => toggleService('digital', 'SERVICES Digital & Web')}
-                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${userSubscriptions.digital ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-sesame-800 text-white hover:bg-sesame-900 shadow'}`}>
-                              {userSubscriptions.digital ? 'Résilier' : 'Activer'}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Service 2 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-sesame-100 hover:bg-sesame-50/50 transition gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className={`w-3 h-3 rounded-full ${userSubscriptions.conseil ? 'bg-emerald-500 animate-pulse' : 'bg-sesame-300'}`}></span>
-                            <div>
-                              <p className="font-bold text-sm text-sesame-900">SERVICES Conseil & Aide</p>
-                              <p className="text-[11px] text-sesame-500">Accompagnement et support administratif stratégique</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
-                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${userSubscriptions.conseil ? 'bg-emerald-100 text-emerald-800' : 'bg-sesame-100 text-sesame-500'}`}>
-                              {userSubscriptions.conseil ? 'Actif ✓' : 'Inactif'}
-                            </span>
-                            <button 
-                              onClick={() => toggleService('conseil', 'SERVICES Conseil & Aide')}
-                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${userSubscriptions.conseil ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-sesame-800 text-white hover:bg-sesame-900 shadow'}`}>
-                              {userSubscriptions.conseil ? 'Résilier' : 'Activer'}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Service 3 */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl border border-sesame-100 hover:bg-sesame-50/50 transition gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className={`w-3 h-3 rounded-full ${userSubscriptions.resteDuMonde ? 'bg-sesame-600 animate-pulse' : 'bg-sesame-300'}`}></span>
-                            <div>
-                              <p className="font-bold text-sm text-sesame-900">SERVICES Horizon International</p>
-                              <p className="text-[11px] text-sesame-500">Conciergerie globale d'exception</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-0 pt-2 sm:pt-0">
-                            <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${userSubscriptions.resteDuMonde ? 'bg-indigo-100 text-indigo-800' : 'bg-sesame-100 text-sesame-500'}`}>
-                              {userSubscriptions.resteDuMonde ? 'Actif ✓' : 'Inactif'}
-                            </span>
-                            <button 
-                              onClick={() => toggleService('resteDuMonde', 'SERVICES Horizon International')}
-                              className={`px-4 py-2 rounded-xl text-xs font-bold transition ${userSubscriptions.resteDuMonde ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-sesame-800 text-white hover:bg-sesame-900 shadow'}`}>
-                              {userSubscriptions.resteDuMonde ? 'Résilier' : 'Activer'}
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Option Sésame Express */}
-                        <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="bg-amber-200 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded">
-                                  EXCLUSIVITÉ
-                                </span>
-                                <h5 className="font-black text-sm text-amber-900">Option Sésame Express ⚡</h5>
-                              </div>
-                              <p className="text-[11px] text-amber-800 mt-1">Garantie de traitement ultra-rapide sous 2 heures.</p>
-                            </div>
-                            <span className="text-sm font-black text-amber-950 shrink-0">80.50 € / an</span>
-                          </div>
-
-                          <div className="flex justify-between items-center pt-2 border-t border-amber-200/50">
-                            <span className={`text-xs font-bold ${userSubscriptions.sesameExpress ? 'text-amber-800' : 'text-sesame-500'}`}>
-                              Statut : {userSubscriptions.sesameExpress ? 'Activé (Facturé)' : 'Désactivé'}
-                            </span>
-                            <button 
-                              onClick={() => toggleService('sesameExpress', 'Option Sésame Express', '80.50 € / an')}
-                              className={`px-4 py-2 rounded-xl text-xs font-black transition ${userSubscriptions.sesameExpress ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-amber-600 text-white hover:bg-amber-700 shadow'}`}>
-                              {userSubscriptions.sesameExpress ? 'Désactiver' : 'Activer pour 80.50 € / an'}
-                            </button>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Flux d'activité en temps réel (Droite) */}
-                  <div className="lg:col-span-5 space-y-6">
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 border border-sesame-100 shadow-xl space-y-6">
-                      <div className="flex justify-between items-center border-b border-sesame-100 pb-4">
-                        <div className="space-y-1">
-                          <h4 className="text-lg font-black text-sesame-950 flex items-center gap-2">
-                            ⏱️ Suivi Réel de Vos Actions
-                          </h4>
-                          <p className="text-xs text-sesame-500">Chaque geste ou configuration de service est historisé.</p>
-                        </div>
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                      </div>
-
-                      {userActivities.length === 0 ? (
-                        <div className="text-center py-12 text-sesame-500 space-y-2">
-                          <p className="text-sm">Aucune action enregistrée pour le moment.</p>
-                          <p className="text-[11px] text-sesame-400">Vos gestes s'afficheront instantanément ici lors de l'utilisation du site.</p>
-                        </div>
-                      ) : (
-                        <div className="flow-root max-h-[350px] overflow-y-auto pr-2">
-                          <ul className="space-y-6">
-                            {userActivities.map((activity, idx) => (
-                              <li key={activity.id || idx} className="relative flex gap-x-4">
-                                <div className={`absolute left-0 top-0 bottom-0 flex w-6 justify-center ${idx === userActivities.length - 1 ? 'h-6' : ''}`}>
-                                  <div className="w-0.5 bg-sesame-200"></div>
-                                </div>
-                                <div className="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
-                                  <span className={`h-3.5 w-3.5 rounded-full ring-4 ring-white ${
-                                    activity.title.includes('Activation') ? 'bg-emerald-500' :
-                                    activity.title.includes('Désactivation') ? 'bg-rose-500' :
-                                    activity.title.includes('Connexion') ? 'bg-purple-500' : 'bg-amber-500'
-                                  }`} />
-                                </div>
-                                <div className="flex-auto py-0.5 text-xs leading-5">
-                                  <div className="flex justify-between gap-x-4">
-                                    <p className="font-semibold text-sesame-900">{activity.title}</p>
-                                    <time className="flex-none text-sesame-400 font-mono">
-                                      {new Date(activity.timestamp).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit', second:'2-digit'})}
-                                    </time>
-                                  </div>
-                                  <p className="text-sesame-600 mt-1">{activity.description}</p>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
-              </section>
-            )}
-
-          </main>
-
-          {/* PIED DE PAGE GÉNÉRAL - MASQUÉ SUR LE TABLEAU DE BORD (DASHBOARD) AVEC COULEUR DYNAMIQUE APPLIQUÉE */}
-          {activeTab !== 'dashboard' && (
-            <footer className="custom-footer-bg text-white pt-12 pb-6 px-6 border-t border-sesame-900 text-left font-sans">
-              <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-                
-                {/* Colonne 1 : Sésame */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <SesameLogo className="w-8 h-8" />
-                    <h3 className="text-xl font-black uppercase tracking-wider">Sésame</h3>
-                  </div>
-                  <p className="text-xs text-sesame-300 leading-relaxed max-w-sm">
-                    Votre clé d'accès universelle à un monde de services d'élite. Conçu pour simplifier votre quotidien.
-                  </p>
-                </div>
-
-                {/* Colonne 2 : Nos domaines - LIÉS INTERACTIVEMENT */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-black uppercase tracking-wider text-sesame-400">Nos domaines</h4>
-                  <ul className="space-y-2 text-xs text-sesame-300">
-                    <li>
-                      <button 
-                        onClick={() => scrollToSection('services', 'pilier-digital')} 
-                        className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
-                      >
-                        Digital & Web
-                      </button>
-                    </li>
-                    <li>
-                      <button 
-                        onClick={() => scrollToSection('services', 'pilier-conseil')} 
-                        className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
-                      >
-                        Conseil & Aide
-                      </button>
-                    </li>
-                    <li>
-                      <button 
-                        onClick={() => scrollToSection('services', 'pilier-reste')} 
-                        className="hover:text-amber-400 transition cursor-pointer text-left focus:outline-none"
-                      >
-                        Horizon International
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Colonne 3 : Options Premium - LIÉES INTERACTIVEMENT */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-black uppercase tracking-wider text-sesame-400">Options Premium</h4>
-                  <ul className="space-y-2 text-xs text-sesame-300">
-                    <li className="text-amber-400 font-bold">
-                      <button 
-                        onClick={() => scrollToSection('home', 'sesame-express')} 
-                        className="hover:text-amber-300 transition text-left focus:outline-none"
-                      >
-                        Sésame Express ⚡ <span className="text-neutral-400 font-normal">(80.50 € / an)</span>
-                      </button>
-                    </li>
-                    <li>Conciergerie Instantanée</li>
-                  </ul>
-                </div>
-
-              </div>
-
-              {/* Ligne de Copyright & Option Cookie cliquable à la fin du Footer */}
-              <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-sesame-900/40 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-sesame-500">
+<body class="h-full text-slate-800 flex flex-col antialiased">
+
+    <!-- Notifications system -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MODAL DE DEMANDE DE DEVIS (CLIENT) -->
+    <div id="devis-request-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all scale-95 duration-200" id="devis-modal-content">
+            <div class="flex justify-between items-start mb-4">
                 <div>
-                  © 2026 Sésame. Tous droits réservés.
+                    <h3 class="text-xl font-bold text-slate-900">Demande de devis</h3>
+                    <p class="text-xs text-slate-500 mt-1">Expliquez votre projet pour obtenir une estimation personnalisée</p>
                 </div>
-                {/* PETITE IMAGE DE COOKIE INTERNET CLIQUABLE AVEC URL */}
-                <div className="flex items-center gap-2">
-                  <span className="text-sesame-400 text-[10px]">Préférences de traceurs</span>
-                  <a 
-                    href="https://teleprime4k.github.io/4k/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    title="En savoir plus sur nos cookies"
-                    className="inline-block transition-transform hover:scale-125 duration-200"
-                  >
-                    <svg className="w-6 h-6 text-amber-500 hover:text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
-                      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="16" cy="15.5" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="8.5" cy="8.5" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="11" cy="17" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="7" cy="14" r="1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </footer>
-          )}
-
-          {/* MODAL AUTHENTIFICATION */}
-          {showAuthModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in font-sans">
-              <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative text-slate-950 text-left">
-                
-                {/* Bouton de fermeture */}
-                <button 
-                  onClick={() => setShowAuthModal(false)}
-                  className="absolute top-4 right-4 text-sesame-400 hover:text-sesame-900 transition p-2 hover:bg-sesame-50 rounded-full">
-                  <span className="text-xl">×</span>
+                <button onclick="closeDevisRequestModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
-
-                <div className="text-center space-y-2 mb-6">
-                  <h3 className="text-2xl font-black text-sesame-950">
-                    {authMode === 'login' ? 'Connexion Sésame' : 'Création de Compte Sésame'}
-                  </h3>
-                  <p className="text-xs text-sesame-500">
-                    {authMode === 'login' ? 'Accédez instantanément à votre espace client.' : 'Enregistrez-vous pour suivre et activer vos services.'}
-                  </p>
-                </div>
-
-                {/* Messages d'erreur & de succès */}
-                {authError && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl mb-4">
-                    ⚠️ {authError}
-                  </div>
-                )}
-                {authSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold rounded-xl mb-4">
-                    ✓ {authSuccess}
-                  </div>
-                )}
-
-                {/* Formulaire principal */}
-                <form onSubmit={authMode === 'login' ? handleLogin : handleRegister} className="space-y-4">
-                  {authMode === 'register' && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-sesame-700 block">Nom complet</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="Jean Dupont"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-sesame-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500" 
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-sesame-700 block">Adresse E-mail</label>
-                    <input 
-                      type="email" 
-                      required
-                      placeholder="votre@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-sesame-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 font-sans" 
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-sesame-700 block">Mot de passe</label>
-                    <input 
-                      type="password" 
-                      required
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-sesame-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500" 
-                    />
-                  </div>
-
-                  <button 
-                    type="submit"
-                    className="w-full py-3.5 bg-sesame-800 hover:bg-sesame-900 text-white font-bold rounded-xl text-sm transition mt-2 shadow-lg">
-                    {authMode === 'login' ? 'Se connecter' : "Créer mon compte"}
-                  </button>
-                </form>
-
-                {/* Switch Login / Register */}
-                <div className="text-center pt-6 mt-4 border-t border-sesame-100 text-xs text-sesame-500 space-x-1">
-                  <span>
-                    {authMode === 'login' ? "Nouveau chez Sésame ?" : "Déjà membre ?"}
-                  </span>
-                  <button 
-                    onClick={() => {
-                      setAuthMode(authMode === 'login' ? 'register' : 'login');
-                      setAuthError('');
-                      setAuthSuccess('');
-                    }}
-                    className="font-bold text-sesame-700 hover:underline">
-                    {authMode === 'login' ? "Créer un compte" : "Se connecter"}
-                  </button>
-                </div>
-
-              </div>
             </div>
-          )}
 
-          {/* FENÊTRE MODALE DE L'ESPACE DE RÈGLEMENT */}
-          {showPaymentModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in font-sans">
-              <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative text-slate-950 text-left">
-                
-                {/* Bouton de Fermeture */}
-                <button 
-                  onClick={() => setShowPaymentModal(false)}
-                  className="absolute top-4 right-4 text-sesame-400 hover:text-sesame-900 transition p-2 hover:bg-sesame-50 rounded-full">
-                  <span className="text-xl">×</span>
-                </button>
-
-                <div className="text-center space-y-2 mb-6">
-                  <span className="text-3xl">💳</span>
-                  <h3 className="text-2xl font-black text-sesame-950">Espace de Règlement</h3>
-                  <p className="text-xs text-sesame-500">Sélectionnez le service que vous désirez payer :</p>
+            <form id="devis-request-form" onsubmit="handleDevisRequestSubmit(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5" id="devis-service-label">Service sélectionné</label>
+                        <input type="text" id="devis-service-name-input" readonly class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 font-medium outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Description de votre besoin *</label>
+                        <textarea id="devis-client-notes" required rows="4" placeholder="Ex: Bonjour, je souhaite une application de livraison avec paiement sécurisé et système de géolocalisation..." class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all resize-none"></textarea>
+                    </div>
                 </div>
 
-                <div className="space-y-4">
-                  
-                  {/* Option 1 : Digital & Web */}
-                  <a 
-                    href="https://buy.stripe.com/dRmcMY0by6Gba0I7TDgYU01" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      handlePaymentClick("SERVICES Digital & Web");
-                      setShowPaymentModal(false);
-                    }}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-indigo-100 bg-indigo-50/30 hover:bg-indigo-50 transition text-left group">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">💻</span>
-                      <div>
-                        <h4 className="font-bold text-sm text-indigo-950">SERVICES Digital & Web</h4>
-                        <p className="text-[11px] text-indigo-600">Projets internet, developpement web & applicatif</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">Régler →</span>
-                  </a>
-
-                  {/* Option 2 : Conseil & Aide */}
-                  <a 
-                    href="https://payment.sesame.fr/conseil-aide" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      handlePaymentClick("SERVICES Conseil & Aide");
-                      setShowPaymentModal(false);
-                    }}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 transition text-left group font-sans">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🤝</span>
-                      <div>
-                        <h4 className="font-bold text-sm text-emerald-950">SERVICES Conseil & Aide</h4>
-                        <p className="text-[11px] text-emerald-600">Aide administrative et séances de conseil stratégique</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">Régler →</span>
-                  </a>
-
-                  {/* Option 3 : Horizon International */}
-                  <a 
-                    href="https://payment.sesame.fr/reste-du-monde" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      handlePaymentClick("SERVICES Horizon International");
-                      setShowPaymentModal(false);
-                    }}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-sesame-200 bg-sesame-50/30 hover:bg-sesame-100 transition text-left group">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🌍</span>
-                      <div>
-                        <h4 className="font-bold text-sm text-sesame-950">SERVICES Horizon International</h4>
-                        <p className="text-[11px] text-sesame-700">Conciergerie, logistique & requêtes sur-mesure</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-sesame-800 group-hover:translate-x-1 transition-transform">Régler →</span>
-                  </a>
-
-                  {/* Option Exclusive : Sésame Express */}
-                  <a 
-                    href="https://buy.stripe.com/9B64gsaQc8Oj3Ck4HrgYU00" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      handlePaymentClick("Option Sésame Express");
-                      setShowPaymentModal(false);
-                    }}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition text-left group">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">⚡</span>
-                      <div>
-                        <h4 className="font-bold text-sm text-amber-950">Option Sésame Express</h4>
-                        <p className="text-[11px] text-amber-800">Traitement prioritaire ultra-rapide sous 2 heures</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-black text-amber-800 group-hover:translate-x-1 transition-transform">Payer (80,50 € / an) →</span>
-                  </a>
-
+                <div class="mt-6 flex gap-3">
+                    <button type="button" onclick="closeDevisRequestModal()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-sm transition-all">
+                        Annuler
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2">
+                        <span>Envoyer ma demande</span>
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* FENÊTRE MODALE DE DEMANDE DE DEVIS GRATUIT */}
-          {showQuoteModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sesame-950/80 backdrop-blur-sm animate-fade-in font-sans">
-              <div className="bg-white w-full max-w-xl rounded-3xl overflow-hidden shadow-2xl border border-sesame-100 flex flex-col p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto text-slate-950 text-left">
-                
-                {/* Bouton de Fermeture */}
-                <button 
-                  onClick={() => setShowQuoteModal(false)}
-                  className="absolute top-4 right-4 text-sesame-400 hover:text-sesame-900 transition p-2 hover:bg-sesame-50 rounded-full">
-                  <span className="text-xl">×</span>
-                </button>
-
-                <div className="text-center space-y-2 mb-6">
-                  <span className="text-3xl">📝</span>
-                  <h3 className="text-2xl font-black text-sesame-950">Demander un Devis Gratuit</h3>
-                  <p className="text-xs text-sesame-600">Sélectionnez nos 3 piliers adaptés à votre besoin pour une mise en relation immédiate avec nos spécialistes.</p>
-                </div>
-
-                <form onSubmit={handleQuoteSubmit} className="space-y-4">
-                  
-                  {/* Section des 3 Piliers Sésame */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-sesame-800 uppercase block tracking-wider font-sans">Sélectionnez les services souhaités :</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      
-                      {/* Pilier Digital */}
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none ${quotePillars.digital ? 'bg-indigo-50 border-indigo-400 text-indigo-950' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={quotePillars.digital} 
-                          onChange={(e) => setQuotePillars({...quotePillars, digital: e.target.checked})}
-                          className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold">💻 Digital</p>
-                          <p className="text-[9px] text-slate-500">Site, Web & SEO</p>
-                        </div>
-                      </label>
-
-                      {/* Pilier Conseil */}
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none ${quotePillars.conseil ? 'bg-emerald-50 border-emerald-400 text-emerald-950' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={quotePillars.conseil} 
-                          onChange={(e) => setQuotePillars({...quotePillars, conseil: e.target.checked})}
-                          className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold">🤝 Conseil</p>
-                          <p className="text-[9px] text-slate-500">Aide & Stratégie</p>
-                        </div>
-                      </label>
-
-                      {/* Pilier Reste du Monde */}
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none ${quotePillars.resteDuMonde ? 'bg-amber-50 border-amber-400 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}>
-                        <input 
-                          type="checkbox" 
-                          checked={quotePillars.resteDuMonde} 
-                          onChange={(e) => setQuotePillars({...quotePillars, resteDuMonde: e.target.checked})}
-                          className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold">🌍 Conciergerie</p>
-                          <p className="text-[9px] text-slate-500">Reste du Monde</p>
-                        </div>
-                      </label>
-
-                    </div>
-                  </div>
-
-                  {/* Coordonnées Client */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-sesame-800 block">Nom complet</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="Jean Dupont"
-                        value={quoteName}
-                        onChange={(e) => setQuoteName(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 font-sans" 
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-sesame-800 block">Téléphone</label>
-                      <input 
-                        type="tel" 
-                        required
-                        placeholder="+33 6 12 34 56 78"
-                        value={quotePhone}
-                        onChange={(e) => setQuotePhone(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-sesame-800 block">Adresse E-mail</label>
-                    <input 
-                      type="email" 
-                      required
-                      placeholder="votre@email.com"
-                      value={quoteEmail}
-                      onChange={(e) => setQuoteEmail(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 font-sans" 
-                    />
-                  </div>
-
-                  {/* Détails du projet */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-sesame-800 block">Dites-nous en plus sur votre besoin :</label>
-                    <textarea 
-                      required
-                      rows="3"
-                      placeholder="Décrivez brièvement votre projet ou vos attentes spécifiques..."
-                      value={quoteMessage}
-                      onChange={(e) => setQuoteMessage(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sesame-500 resize-none font-sans"
-                    ></textarea>
-                  </div>
-
-                  {/* Bouton de validation */}
-                  <button 
-                    type="submit"
-                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition mt-2 shadow-lg flex items-center justify-center gap-2">
-                    🚀 Envoyer ma Demande Gratuitement
-                  </button>
-
-                </form>
-              </div>
-            </div>
-          )}
-
+            </form>
         </div>
-      );
-    }
+    </div>
 
-    // Rendu de l'application
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+    <!-- MODAL DE PAIEMENT SIMULÉ -->
+    <div id="payment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all scale-95 duration-200" id="payment-modal-content">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">Finaliser le paiement</h3>
+                    <p class="text-xs text-slate-500 mt-1">Transaction sécurisée 256-bit</p>
+                </div>
+                <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Détail du service -->
+            <div class="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100">
+                <div class="flex justify-between items-center mb-2">
+                    <span id="modal-service-name" class="font-semibold text-slate-800">-</span>
+                    <span id="modal-service-badge" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">-</span>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span class="text-sm text-slate-500">Total à payer aujourd'hui</span>
+                    <span id="modal-service-price" class="text-lg font-bold text-slate-900">0,00 €</span>
+                </div>
+            </div>
+
+            <!-- Formulaire de carte -->
+            <form id="payment-form" onsubmit="handlePaymentSubmit(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Nom sur la carte</label>
+                        <input type="text" required placeholder="Jean Dupont" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Numéro de carte</label>
+                        <div class="relative">
+                            <input type="text" required placeholder="4970 1234 5678 9000" pattern="[0-9\s]{13,19}" class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all">
+                            <span class="absolute left-3 top-3 text-slate-400">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Expiration</label>
+                            <input type="text" required placeholder="MM/AA" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all text-center">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">CVC / CVV</label>
+                            <input type="password" required placeholder="123" pattern="[0-9]{3,4}" class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                    <button type="button" onclick="closePaymentModal()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-sm transition-all">
+                        Annuler
+                    </button>
+                    <button type="submit" id="btn-pay-confirm" class="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2">
+                        <span>Payer maintenant</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="glass border-b border-slate-200 sticky top-0 z-40 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo -->
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                        <i data-lucide="zap" class="text-white w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-bold text-slate-900 tracking-tight">SaaSify</span>
+                        <span class="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 rounded-full border border-slate-200">v2.4</span>
+                    </div>
+                </div>
+
+                <!-- Auth Navigation Section -->
+                <div class="flex items-center gap-4">
+                    <!-- Visiteur -->
+                    <div id="nav-visitor" class="flex items-center gap-3">
+                        <button onclick="switchView('login')" class="text-sm font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg transition-colors">Connexion</button>
+                        <button onclick="switchView('register')" class="text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm shadow-indigo-600/10 transition-colors">S'inscrire</button>
+                    </div>
+
+                    <!-- Connecté -->
+                    <div id="nav-user" class="hidden flex items-center gap-4">
+                        <div class="hidden md:flex flex-col text-right">
+                            <span class="flex items-center gap-1.5 justify-end">
+                                <span id="user-display-name" class="text-sm font-semibold text-slate-900">Utilisateur</span>
+                                <span id="user-admin-badge" class="hidden px-1.5 py-0.5 text-[9px] font-bold bg-amber-500 text-slate-950 rounded uppercase tracking-wider">Admin</span>
+                            </span>
+                            <span id="user-display-email" class="text-xs text-slate-500">user@email.com</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+                        <button onclick="handleLogout()" class="text-slate-500 hover:text-rose-600 p-2 rounded-lg hover:bg-slate-100 transition-colors" title="Déconnexion">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 flex flex-col">
+        
+        <!-- SECTION 1 : ACCUEIL PUBLIC / PRÉSENTATION -->
+        <section id="view-home" class="py-16 px-4 max-w-7xl mx-auto flex-1 flex flex-col justify-center">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full">Nouveau standard de gestion d'abonnements</span>
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 mt-6 tracking-tight leading-tight">
+                    Activez et gérez vos services <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">à la demande</span>
+                </h1>
+                <p class="text-lg text-slate-600 mt-6 leading-relaxed">
+                    Un tableau de bord intuitif pour activer, désactiver et réactiver vos services. Payez la première fois, résiliez quand vous voulez, réactivez sans payer si votre période est toujours en cours.
+                </p>
+                <div class="mt-10 flex flex-wrap justify-center gap-4">
+                    <button onclick="switchView('register')" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2">
+                        <span>Créer un compte d'essai</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="switchView('login')" class="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all">
+                        Se connecter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Features illustrées -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                        <i data-lucide="calendar" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Formule Annuelle</h3>
+                    <p class="text-sm text-slate-600 mt-2">Activez pour 1 an. Si vous désactivez avant la fin de l'année, réactivez à tout moment gratuitement jusqu'à l'échéance d'un an.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Formule Mensuelle</h3>
+                    <p class="text-sm text-slate-600 mt-2">Paiement mensuel. Désactivez et profitez de la gratuité de réactivation tant que la période de 30 jours n'est pas écoulée.</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Sécurité Totale</h3>
+                    <p class="text-sm text-slate-600 mt-2">Aucun frais caché, suivi transparent des dates d'activation et de validité directement sur votre tableau de bord.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2 : CONNEXION -->
+        <section id="view-login" class="hidden py-12 px-4 max-w-md w-full mx-auto flex-1 flex flex-col justify-center">
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-xl">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-950">Bon retour parmi nous</h2>
+                    <p class="text-sm text-slate-500 mt-1">Saisissez vos identifiants pour continuer</p>
+                </div>
+
+                <!-- INFO BULLE : COMPTE ADMIN -->
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 mb-6 text-xs text-amber-800 flex items-start gap-2.5">
+                    <i data-lucide="key" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold">🔑 Compte Administrateur de Test :</span><br>
+                        Email : <code class="bg-amber-100 px-1 py-0.5 rounded font-mono">admin@saasify.com</code><br>
+                        Mot de passe : <code class="bg-amber-100 px-1 py-0.5 rounded font-mono">admin123</code>
+                    </div>
+                </div>
+
+                <form id="login-form" onsubmit="handleLoginSubmit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse email</label>
+                            <input type="email" id="login-email" required placeholder="nom@exemple.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-sm font-medium text-slate-700">Mot de passe</label>
+                                <span class="text-xs text-indigo-600 hover:underline cursor-pointer">Oublié ?</span>
+                            </div>
+                            <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 mt-6 transition-all flex items-center justify-center gap-2">
+                        <span>Se connecter</span>
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <div class="text-center mt-6 pt-6 border-t border-slate-100">
+                    <span class="text-sm text-slate-500">Pas encore de compte ?</span>
+                    <button onclick="switchView('register')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 ml-1">S'inscrire</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3 : INSCRIPTION -->
+        <section id="view-register" class="hidden py-12 px-4 max-w-md w-full mx-auto flex-1 flex flex-col justify-center">
+            <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-xl">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-950">Créer un compte</h2>
+                    <p class="text-sm text-slate-500 mt-1">Commencez à gérer vos services dès aujourd'hui</p>
+                </div>
+
+                <form id="register-form" onsubmit="handleRegisterSubmit(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Nom complet</label>
+                            <input type="text" id="register-name" required placeholder="Jean Dupont" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Adresse email</label>
+                            <input type="email" id="register-email" required placeholder="jean@exemple.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Mot de passe</label>
+                            <input type="password" id="register-password" required placeholder="Minimum 6 caractères" minlength="6" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 mt-6 transition-all flex items-center justify-center gap-2">
+                        <span>Créer mon compte</span>
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <div class="text-center mt-6 pt-6 border-t border-slate-100">
+                    <span class="text-sm text-slate-500">Vous possédez déjà un compte ?</span>
+                    <button onclick="switchView('login')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 ml-1">Se connecter</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4 : TABLEAU DE BORD CLIENT -->
+        <section id="view-dashboard" class="hidden py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full flex-1 space-y-8">
+            <!-- Bannière d'accueil -->
+            <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 mb-8 relative overflow-hidden shadow-xl">
+                <!-- Décoration -->
+                <div class="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 bg-radial-gradient flex items-center justify-center">
+                    <i data-lucide="zap" class="w-64 h-64 text-white"></i>
+                </div>
+
+                <div class="relative z-10 max-w-xl">
+                    <span class="px-2.5 py-1 text-xs font-semibold bg-indigo-500/20 border border-indigo-400/30 rounded-full text-indigo-300">Mon Espace Client</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold mt-3 tracking-tight">Bonjour, <span id="dashboard-user-name" class="text-indigo-400">-</span> 👋</h2>
+                    <p class="text-sm sm:text-base text-slate-300 mt-2 leading-relaxed">
+                        Bienvenue sur votre console d'administration. Vous pouvez activer, tester et désactiver vos services à la volée. Notre système s'adapte automatiquement à votre cycle de facturation.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Chiffres clés / Stats de l'abonnement -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+                <!-- Services Actifs -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="layers" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate">Actifs</p>
+                        <p id="stat-active-count" class="text-xl font-bold text-slate-900">0</p>
+                    </div>
+                </div>
+                <!-- Facturation Estimée Mensuelle -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="receipt" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate">Mensuel Est.</p>
+                        <p id="stat-total-cost" class="text-xl font-bold text-slate-900">0,00 €</p>
+                    </div>
+                </div>
+                <!-- Facturation Estimée Annuelle -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate">Annuel Est.</p>
+                        <p id="stat-annual-cost" class="text-xl font-bold text-slate-900">0,00 €</p>
+                    </div>
+                </div>
+                <!-- NOUVEAU: Facturation Estimée sur Devis -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate">Devis Actifs</p>
+                        <p id="stat-devis-cost" class="text-xl font-bold text-slate-900">0,00 €</p>
+                    </div>
+                </div>
+                <!-- Services Résiliés -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate">Inactifs</p>
+                        <p id="stat-cancelled-count" class="text-xl font-bold text-slate-900">0</p>
+                    </div>
+                </div>
+                <!-- Contrôle de simulation de date de démo -->
+                <div class="bg-white p-4 rounded-2xl border-2 border-indigo-100 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Date Virtuelle</span>
+                        <button onclick="resetSimulationDate()" class="text-[9px] text-slate-400 hover:text-slate-600 underline">Reset</button>
+                    </div>
+                    <div class="mt-1">
+                        <input type="date" id="simulated-date" onchange="changeSimulationDate(this.value)" class="text-xs font-semibold text-slate-800 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 w-full focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ZONE PRINCIPALE : SERVICES ET HISTORIQUE -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- COLONNE GAUCHE/MILIEU : CATALOGUE DES SERVICES -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Nos Services Disponibles</h3>
+                            <p class="text-sm text-slate-500 mt-0.5">Activez et gérez vos intégrations d'un simple clic.</p>
+                        </div>
+                        <!-- Filtres simples -->
+                        <div class="flex gap-1 bg-slate-100 p-1 rounded-lg self-start">
+                            <button onclick="filterServices('all')" id="filter-all" class="text-xs font-semibold px-2.5 py-1.5 rounded-md bg-white text-indigo-600 shadow-sm transition-all">Tous</button>
+                            <button onclick="filterServices('mensuel')" id="filter-mensuel" class="text-xs font-medium px-2.5 py-1.5 text-slate-600 rounded-md hover:bg-white hover:text-slate-800 transition-all">Mensuel</button>
+                            <button onclick="filterServices('annuel')" id="filter-annuel" class="text-xs font-medium px-2.5 py-1.5 text-slate-600 rounded-md hover:bg-white hover:text-slate-800 transition-all">Annuel</button>
+                            <button onclick="filterServices('devis')" id="filter-devis" class="text-xs font-medium px-2.5 py-1.5 text-slate-600 rounded-md hover:bg-white hover:text-slate-800 transition-all">Devis</button>
+                        </div>
+                    </div>
+
+                    <!-- Liste des services sous forme de cartes riches -->
+                    <div id="services-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Généré dynamiquement en JS -->
+                    </div>
+                </div>
+
+                <!-- COLONNE DROITE : HISTORIQUE DES TRANSACTIONS ET EXPLICATIONS -->
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <h3 class="text-md font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="info" class="w-5 h-5 text-indigo-600"></i>
+                            <span>Règles de Facturation</span>
+                        </h3>
+                        <div class="space-y-3 text-sm text-slate-600">
+                            <div class="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/30">
+                                <span class="font-bold text-indigo-950 block">✨ Première Activation</span>
+                                Paiement obligatoire immédiat du montant correspondant.
+                            </div>
+                            <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/30">
+                                <span class="font-bold text-emerald-950 block">🗓️ Formule Annuelle</span>
+                                Réactivation <strong>gratuite</strong> pendant la même année contractuelle en cas de désactivation temporaire.
+                            </div>
+                            <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100/30">
+                                <span class="font-bold text-purple-950 block">⏳ Formule Mensuelle</span>
+                                Réactivation <strong>sans frais</strong> tant que les <strong>30 jours</strong> ne sont pas écoulés.
+                            </div>
+                            <div class="p-3 bg-cyan-50/50 rounded-xl border border-cyan-100/30">
+                                <span class="font-bold text-cyan-950 block">📋 Services sous Devis</span>
+                                Renseignez votre besoin dans le formulaire. Fixez ensuite le tarif souhaité via la <strong>Console d'Administration</strong> ci-dessous pour simuler la réponse commerciale.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-md font-bold text-slate-900 flex items-center gap-2">
+                                <i data-lucide="history" class="w-5 h-5 text-slate-600"></i>
+                                <span>Historique des paiements</span>
+                            </h3>
+                            <button onclick="clearPaymentHistory()" class="text-xs text-rose-500 hover:underline">Vider</button>
+                        </div>
+                        
+                        <div id="payments-history-list" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                            <!-- Généré dynamiquement en JS -->
+                            <p class="text-slate-400 text-sm italic text-center py-4">Aucune transaction effectuée.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIMULATEUR DE CONSOLE ADMINISTRATEUR (SÉCURISÉE - SEUL L'ADMIN PEUT LA VOIR) -->
+            <div id="admin-console-section" class="hidden bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold">🔐 Console Administrateur Globale</h3>
+                        <p class="text-xs text-slate-400">Cette section est strictement réservée au compte administrateur. Fixez les prix pour toutes les demandes clients de la plateforme.</p>
+                    </div>
+                </div>
+
+                <div id="admin-devis-list" class="space-y-4">
+                    <!-- Les demandes de devis de tous les clients à valider apparaîtront ici -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center mt-auto">
+        <p class="text-xs text-slate-500">© 2026 SaaSify - Outil de gestion des services clients d'abonnements. Données enregistrées localement pour démonstration.</p>
+    </footer>
+
+    <!-- LOGIC APPLICATION -->
+    <script>
+        // --- BASE DE DONNÉES EN MÉMOIRE (SIMULÉE AVEC LOCALSTORAGE) ---
+        const LOCAL_STORAGE_USERS_KEY = 'saasify_users';
+        const LOCAL_STORAGE_SESSION_KEY = 'saasify_current_user';
+        const LOCAL_STORAGE_PAYMENTS_KEY = 'saasify_payments';
+
+        // 1. SERVICES STATIQUES DISPONIBLES (INCLUANT LES 2 SERVICES SOUS DEVIS)
+        const AVAILABLE_SERVICES = [
+            {
+                id: 'srv-cloud',
+                name: 'Stockage Cloud Pro',
+                description: 'Sauvegardez vos données d\'entreprise sur nos serveurs hautement sécurisés.',
+                price: 15.00,
+                type: 'mensuel',
+                icon: 'cloud-lightning',
+                color: 'bg-blue-50 text-blue-600 border-blue-100'
+            },
+            {
+                id: 'srv-crm',
+                name: 'Gestion CRM Avancé',
+                description: 'Un outil complet de gestion des clients pour propulser vos ventes.',
+                price: 49.00,
+                type: 'mensuel',
+                icon: 'users',
+                color: 'bg-violet-50 text-violet-600 border-violet-100'
+            },
+            {
+                id: 'srv-cdn',
+                name: 'CDN Ultra-Rapide (Global)',
+                description: 'Accélérez le chargement de votre site internet à travers le monde entier.',
+                price: 180.00,
+                type: 'annuel',
+                icon: 'globe',
+                color: 'bg-emerald-50 text-emerald-600 border-emerald-100'
+            },
+            {
+                id: 'srv-security',
+                name: 'Pack Sécurité & Pare-feu',
+                description: 'Analyse automatique des menaces et protection DDoS continue.',
+                price: 350.00,
+                type: 'annuel',
+                icon: 'shield',
+                color: 'bg-amber-50 text-amber-600 border-amber-100'
+            },
+            {
+                id: 'srv-devis-app',
+                name: 'Création d\'App Mobile Custom',
+                description: 'Développement d\'une application mobile sur-mesure iOS et Android (Sous Devis).',
+                price: null,
+                type: 'devis',
+                icon: 'smartphone',
+                color: 'bg-rose-50 text-rose-600 border-rose-100'
+            },
+            {
+                id: 'srv-devis-design',
+                name: 'Design de Marque & UX complet',
+                description: 'Refonte d\'identité visuelle, logos, chartes graphiques et parcours utilisateurs (Sous Devis).',
+                price: null,
+                type: 'devis',
+                icon: 'palette',
+                color: 'bg-cyan-50 text-cyan-600 border-cyan-100'
+            }
+        ];
+
+        // 2. ÉTATS GLOBAUX
+        let users = JSON.parse(localStorage.getItem(LOCAL_STORAGE_USERS_KEY)) || {};
+        let currentUser = JSON.parse(localStorage.getItem(LOCAL_STORAGE_SESSION_KEY)) || null;
+        let currentFilter = 'all';
+        
+        // Date de simulation de la démo
+        let simulatedDate = new Date();
+        document.getElementById('simulated-date').value = simulatedDate.toISOString().split('T')[0];
+
+        // Service en cours de transaction
+        let serviceUnderTransaction = null;
+        let serviceUnderDevisRequest = null;
+
+        // Configuration du compte Administrateur par défaut si inexistant
+        if (!users['admin@saasify.com']) {
+            users['admin@saasify.com'] = {
+                name: "Administrateur Principal",
+                email: "admin@saasify.com",
+                password: "admin123",
+                isAdmin: true,
+                services: {},
+                paymentHistory: []
+            };
+            localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
+        }
+
+        // Initialisation de la page
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            lucide.createIcons();
+        });
+
+        function initApp() {
+            if (currentUser) {
+                // Charge l'utilisateur depuis la base "fraîche" de localStorage
+                currentUser = users[currentUser.email] || currentUser;
+                switchView('dashboard');
+                updateDashboard();
+            } else {
+                switchView('home');
+            }
+        }
+
+        // --- NOTIFICATIONS (TOASTS) ---
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-white text-slate-800';
+            let icon = 'info';
+            let iconColor = 'text-indigo-500';
+
+            if (type === 'success') {
+                bgClass = 'bg-emerald-50 text-emerald-900 border-emerald-200';
+                icon = 'check-circle';
+                iconColor = 'text-emerald-500';
+            } else if (type === 'error') {
+                bgClass = 'bg-rose-50 text-rose-900 border-rose-200';
+                icon = 'alert-triangle';
+                iconColor = 'text-rose-500';
+            } else if (type === 'warning') {
+                bgClass = 'bg-amber-50 text-amber-900 border-amber-200';
+                icon = 'alert-circle';
+                iconColor = 'text-amber-500';
+            }
+
+            toast.className = `p-4 rounded-xl shadow-lg border flex items-center gap-3 max-w-sm pointer-events-auto transform transition-all translate-y-2 opacity-0 duration-300 ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 flex-shrink-0 ${iconColor}"></i>
+                <div class="text-sm font-medium">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // --- CONTRÔLE DES VUES ---
+        function switchView(viewName) {
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-register').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            if (currentUser) {
+                document.getElementById('nav-visitor').classList.add('hidden');
+                document.getElementById('nav-user').classList.remove('hidden');
+                document.getElementById('user-display-name').textContent = currentUser.name;
+                document.getElementById('user-display-email').textContent = currentUser.email;
+                
+                // Afficher ou masquer le badge admin dans le header
+                document.getElementById('user-admin-badge').classList.toggle('hidden', !currentUser.isAdmin);
+            } else {
+                document.getElementById('nav-visitor').classList.remove('hidden');
+                document.getElementById('nav-user').classList.add('hidden');
+            }
+        }
+
+        // --- AUTHENTIFICATION ---
+        function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim().toLowerCase();
+            const password = document.getElementById('register-password').value;
+
+            if (users[email]) {
+                showNotification("Un compte avec cet email existe déjà.", "error");
+                return;
+            }
+
+            const newUser = {
+                name: name,
+                email: email,
+                password: password,
+                isAdmin: false, // Inscription classique = toujours client
+                services: {}, 
+                paymentHistory: []
+            };
+
+            users[email] = newUser;
+            saveUsers();
+            
+            currentUser = newUser;
+            saveSession();
+
+            showNotification(`Bienvenue, votre compte a bien été créé !`, 'success');
+            switchView('dashboard');
+            updateDashboard();
+            
+            document.getElementById('register-form').reset();
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+
+            const user = users[email];
+            if (!user || user.password !== password) {
+                showNotification("Email ou mot de passe incorrect.", "error");
+                return;
+            }
+
+            currentUser = user;
+            saveSession();
+
+            showNotification(`Heureux de vous revoir, ${user.name} ! ${user.isAdmin ? '👑 Mode Administrateur activé.' : ''}`, 'success');
+            switchView('dashboard');
+            updateDashboard();
+
+            document.getElementById('login-form').reset();
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
+            showNotification("Vous avez été déconnecté.", "info");
+            switchView('home');
+        }
+
+        function saveUsers() {
+            localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
+        }
+
+        function saveSession() {
+            localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(currentUser));
+        }
+
+        // --- GESTION DU TEMPS DE SIMULATION ---
+        function changeSimulationDate(val) {
+            simulatedDate = new Date(val);
+            showNotification(`Date virtuelle modifiée : ${simulatedDate.toLocaleDateString('fr-FR')}`, 'info');
+            updateDashboard();
+        }
+
+        function resetSimulationDate() {
+            simulatedDate = new Date();
+            document.getElementById('simulated-date').value = simulatedDate.toISOString().split('T')[0];
+            showNotification("Date réinitialisée au jour actuel.", "info");
+            updateDashboard();
+        }
+
+        // --- LOGIQUE ABONNEMENT ET CALCULS DE TEMPS ---
+
+        function checkCoverage(userService) {
+            if (!userService || !userService.expiryDate) {
+                return { covered: false, remainingDays: 0 };
+            }
+
+            const expiry = new Date(userService.expiryDate);
+            const timeDiff = expiry.getTime() - simulatedDate.getTime();
+            const remainingDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+            return {
+                covered: remainingDays > 0,
+                remainingDays: Math.max(0, remainingDays)
+            };
+        }
+
+        function filterServices(category) {
+            currentFilter = category;
+            
+            ['all', 'mensuel', 'annuel', 'devis'].forEach(cat => {
+                const btn = document.getElementById(`filter-${cat}`);
+                if (cat === category) {
+                    btn.className = "text-xs font-semibold px-2.5 py-1.5 rounded-md bg-white text-indigo-600 shadow-sm transition-all";
+                } else {
+                    btn.className = "text-xs font-medium px-2.5 py-1.5 text-slate-600 rounded-md hover:bg-white hover:text-slate-800 transition-all";
+                }
+            });
+
+            renderServices();
+        }
+
+        // --- MODAL DE DEMANDE DE DEVIS (OUVERTURE & SAISIE) ---
+        function openDevisRequestModal(service) {
+            serviceUnderDevisRequest = service;
+            document.getElementById('devis-service-name-input').value = service.name;
+            document.getElementById('devis-client-notes').value = "";
+
+            const modal = document.getElementById('devis-request-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('devis-modal-content').classList.remove('scale-95');
+                document.getElementById('devis-modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeDevisRequestModal() {
+            const modal = document.getElementById('devis-request-modal');
+            document.getElementById('devis-modal-content').classList.add('scale-95');
+            document.getElementById('devis-modal-content').classList.remove('scale-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                serviceUnderDevisRequest = null;
+            }, 200);
+        }
+
+        function handleDevisRequestSubmit(e) {
+            e.preventDefault();
+            if (!serviceUnderDevisRequest || !currentUser) return;
+
+            const service = serviceUnderDevisRequest;
+            const clientNotes = document.getElementById('devis-client-notes').value.trim();
+
+            // Mettre à jour l'état du service à "devis_demande"
+            currentUser.services[service.id] = {
+                status: 'devis_demande',
+                clientNotes: clientNotes,
+                hasPaidOnce: false,
+                devisDate: simulatedDate.toISOString()
+            };
+
+            users[currentUser.email] = currentUser;
+            saveUsers();
+            saveSession();
+
+            showNotification(`Votre demande de devis pour "${service.name}" a été transmise ! Connectez-vous avec le compte administrateur pour lui attribuer un tarif.`, 'success');
+            
+            closeDevisRequestModal();
+            updateDashboard();
+        }
+
+        // --- CONSOLE D'ADMINISTRATION : ENVOYER LE PRIX DU DEVIS À UN CLIENT ---
+        function sendDevisPriceFromAdmin(clientEmail, serviceId) {
+            // ID unique pour cibler l'input du prix sans conflits de caractères spéciaux
+            const inputId = `admin-price-input-${clientEmail.replace(/[@.]/g, '_')}-${serviceId}`;
+            const priceInput = document.getElementById(inputId);
+            const price = parseFloat(priceInput.value);
+
+            if (isNaN(price) || price <= 0) {
+                showNotification("Veuillez saisir un tarif valide supérieur à 0 €.", "error");
+                return;
+            }
+
+            const targetUser = users[clientEmail];
+            if (!targetUser || !targetUser.services[serviceId]) return;
+
+            // Passer le statut à 'devis_propose' et fixer le devisAmount
+            targetUser.services[serviceId].status = 'devis_propose';
+            targetUser.services[serviceId].devisAmount = price;
+            targetUser.services[serviceId].devisDate = simulatedDate.toISOString();
+
+            // Enregistrer globalement
+            users[clientEmail] = targetUser;
+            saveUsers();
+
+            // Si l'administrateur s'auto-évalue (cas rare mais géré)
+            if (currentUser && currentUser.email === clientEmail) {
+                currentUser = targetUser;
+                saveSession();
+            }
+
+            showNotification(`Le prix du devis pour "${AVAILABLE_SERVICES.find(s=>s.id===serviceId).name}" a été fixé à ${price.toFixed(2)} € pour le client ${targetUser.name} !`, 'success');
+            updateDashboard();
+        }
+
+        // --- MODAL DE PAIEMENT ---
+        function openPaymentModal(service, customPrice = null) {
+            serviceUnderTransaction = service;
+            document.getElementById('modal-service-name').textContent = service.name;
+            
+            let badgeText = '';
+            let finalPrice = customPrice !== null ? customPrice : service.price;
+
+            if (service.type === 'mensuel') badgeText = 'Abonnement Mensuel';
+            else if (service.type === 'annuel') badgeText = 'Abonnement Annuel';
+            else if (service.type === 'devis') badgeText = 'Projet sous Devis (Annuel)';
+
+            document.getElementById('modal-service-badge').textContent = badgeText;
+            document.getElementById('modal-service-price').textContent = `${finalPrice.toFixed(2)} €`;
+
+            const modal = document.getElementById('payment-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('payment-modal-content').classList.remove('scale-95');
+                document.getElementById('payment-modal-content').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closePaymentModal() {
+            const modal = document.getElementById('payment-modal');
+            document.getElementById('payment-modal-content').classList.add('scale-95');
+            document.getElementById('payment-modal-content').classList.remove('scale-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                serviceUnderTransaction = null;
+            }, 200);
+        }
+
+        function handlePaymentSubmit(e) {
+            e.preventDefault();
+            if (!serviceUnderTransaction || !currentUser) return;
+
+            const service = serviceUnderTransaction;
+            const nowStr = simulatedDate.toISOString();
+            const userService = currentUser.services[service.id];
+
+            // Récupérer le prix (fixe ou généré par le devis)
+            let actualPrice = service.price;
+            if (service.type === 'devis' && userService && userService.devisAmount) {
+                actualPrice = userService.devisAmount;
+            }
+
+            // Calculer la date d'expiration
+            const expiry = new Date(simulatedDate);
+            if (service.type === 'mensuel') {
+                expiry.setDate(expiry.getDate() + 30);
+            } else {
+                expiry.setFullYear(expiry.getFullYear() + 1);
+            }
+
+            // Enregistrer l'état actif
+            currentUser.services[service.id] = {
+                status: 'active',
+                lastPaymentDate: nowStr,
+                expiryDate: expiry.toISOString(),
+                hasPaidOnce: true,
+                devisAmount: service.type === 'devis' ? actualPrice : undefined,
+                clientNotes: userService ? userService.clientNotes : undefined
+            };
+
+            // Ajouter à l'historique
+            const transaction = {
+                id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
+                serviceId: service.id,
+                serviceName: service.name,
+                amount: actualPrice,
+                date: nowStr,
+                type: service.type,
+                mode: service.type === 'devis' ? 'Validation & Paiement de Devis' : 'Premier paiement d\'activation'
+            };
+
+            if (!currentUser.paymentHistory) currentUser.paymentHistory = [];
+            currentUser.paymentHistory.unshift(transaction);
+
+            users[currentUser.email] = currentUser;
+            saveUsers();
+            saveSession();
+
+            showNotification(`Félicitations ! Le service "${service.name}" est activé avec succès.`, 'success');
+            
+            closePaymentModal();
+            updateDashboard();
+        }
+
+        // --- ACTIONS SUR LES SERVICES ---
+        function toggleService(serviceId) {
+            if (!currentUser) return;
+
+            const service = AVAILABLE_SERVICES.find(s => s.id === serviceId);
+            if (!service) return;
+
+            const userService = currentUser.services[serviceId];
+
+            // SI DÉJÀ ACTIF -> ALORS ON DÉSACTIVE
+            if (userService && userService.status === 'active') {
+                userService.status = 'inactive';
+                showNotification(`Le service "${service.name}" a été désactivé.`, 'warning');
+                
+                users[currentUser.email] = currentUser;
+                saveUsers();
+                saveSession();
+                updateDashboard();
+                return;
+            }
+
+            // SI TYPE DEVIS & AUCUN DEVIS DISPONIBLE OU PROPOSÉ
+            if (service.type === 'devis') {
+                if (!userService || (!userService.status && !userService.hasPaidOnce)) {
+                    openDevisRequestModal(service);
+                    return;
+                }
+                if (userService.status === 'devis_demande') {
+                    showNotification("Votre demande est en cours d'analyse par l'administrateur. Veuillez vous connecter au compte admin pour attribuer un tarif.", "warning");
+                    return;
+                }
+            }
+
+            // SI PREMIÈRE ACTIVATION POUR FORMULE CLASSIQUE OU PREMIER PAIEMENT DE DEVIS
+            if (!userService || !userService.hasPaidOnce) {
+                if (service.type === 'devis' && userService && userService.status === 'devis_propose') {
+                    openPaymentModal(service, userService.devisAmount);
+                } else {
+                    openPaymentModal(service);
+                }
+                return;
+            }
+
+            // IL A DÉJÀ PAYÉ AU MOINS UNE FOIS -> RÈGLES DE COUVERTURE TEMPORELLE
+            const coverage = checkCoverage(userService);
+
+            if (coverage.covered) {
+                userService.status = 'active';
+
+                const freeTransaction = {
+                    id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
+                    serviceId: service.id,
+                    serviceName: service.name,
+                    amount: 0.00,
+                    date: simulatedDate.toISOString(),
+                    type: service.type,
+                    mode: 'Réactivation gratuite (période en cours)'
+                };
+
+                currentUser.paymentHistory.unshift(freeTransaction);
+
+                showNotification(`Réactivation gratuite pour "${service.name}" (il vous reste ${coverage.remainingDays} jours de couverture).`, 'success');
+                
+                users[currentUser.email] = currentUser;
+                saveUsers();
+                saveSession();
+                updateDashboard();
+            } else {
+                showNotification(`Votre couverture précédente est expirée. Un nouveau paiement est nécessaire.`, 'info');
+                if (service.type === 'devis') {
+                    openPaymentModal(service, userService.devisAmount);
+                } else {
+                    openPaymentModal(service);
+                }
+            }
+        }
+
+        // --- AFFICHAGE RENDU DYNAMIQUE ---
+        function renderServices() {
+            const listContainer = document.getElementById('services-list');
+            listContainer.innerHTML = '';
+
+            const filtered = AVAILABLE_SERVICES.filter(s => {
+                if (currentFilter === 'all') return true;
+                return s.type === currentFilter;
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `<p class="text-slate-400 text-sm italic col-span-2 text-center py-8">Aucun service trouvé dans cette catégorie.</p>`;
+                return;
+            }
+
+            filtered.forEach(service => {
+                const userService = currentUser ? currentUser.services[service.id] : null;
+                const isActive = userService && userService.status === 'active';
+                const coverage = checkCoverage(userService);
+                
+                let statusBadge = '';
+                let actionBtnText = 'Activer';
+                let actionBtnClass = 'bg-indigo-600 hover:bg-indigo-700 text-white';
+                let infoText = '';
+                let priceDisplay = '';
+
+                // Formater le prix affiché
+                if (service.type === 'devis') {
+                    if (userService && userService.devisAmount && userService.status !== 'devis_demande') {
+                        priceDisplay = `<span class="text-2xl font-extrabold text-slate-900">${userService.devisAmount.toFixed(2)} €</span> <span class="text-xs text-slate-400 font-medium">/ an (sur devis)</span>`;
+                    } else if (userService && userService.status === 'devis_demande') {
+                        priceDisplay = `<span class="text-xl font-bold text-amber-500">Estimation en cours...</span>`;
+                    } else {
+                        priceDisplay = `<span class="text-xl font-bold text-slate-500">Sous Devis</span>`;
+                    }
+                } else {
+                    priceDisplay = `<span class="text-2xl font-extrabold text-slate-900">${service.price.toFixed(2)} €</span> <span class="text-xs text-slate-400 font-medium">/ ${service.type === 'mensuel' ? 'mois' : 'an'}</span>`;
+                }
+
+                // Gérer les différents statuts et visuels
+                if (isActive) {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Actif
+                    </span>`;
+                    actionBtnText = 'Désactiver';
+                    actionBtnClass = 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200';
+                    infoText = `Expire le <strong>${new Date(userService.expiryDate).toLocaleDateString('fr-FR')}</strong>`;
+                    if (userService.clientNotes) {
+                        infoText += `<br><span class="text-slate-400 italic">Projet : "${userService.clientNotes}"</span>`;
+                    }
+                } else if (userService && userService.status === 'devis_demande') {
+                    statusBadge = `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">En attente d'évaluation</span>`;
+                    actionBtnText = "En attente du prix...";
+                    actionBtnClass = 'bg-slate-100 text-slate-400 cursor-not-allowed';
+                    infoText = `Demande : <span class="italic text-slate-600">"${userService.clientNotes}"</span>.<br><span class="text-amber-600 font-semibold">Connectez-vous en tant qu'administrateur pour fixer le prix !</span>`;
+                } else if (userService && userService.status === 'devis_propose') {
+                    statusBadge = `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-cyan-100 text-cyan-800 border border-cyan-200">Devis Prêt</span>`;
+                    actionBtnText = 'Accepter & Payer';
+                    actionBtnClass = 'bg-cyan-600 hover:bg-cyan-700 text-white';
+                    infoText = `Demande : <span class="italic text-slate-600">"${userService.clientNotes}"</span>. Devis validé par l'admin !`;
+                } else if (userService && userService.hasPaidOnce) {
+                    statusBadge = `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600 border border-slate-200">Désactivé</span>`;
+                    
+                    if (coverage.covered) {
+                        actionBtnText = 'Réactiver';
+                        actionBtnClass = 'bg-emerald-600 hover:bg-emerald-700 text-white';
+                        infoText = `<span class="text-emerald-600 font-medium">Réactivation gratuite !</span> (Couverture jusqu'au ${new Date(userService.expiryDate).toLocaleDateString('fr-FR')})`;
+                    } else {
+                        actionBtnText = 'Réactiver';
+                        actionBtnClass = 'bg-slate-800 hover:bg-slate-900 text-white';
+                        infoText = `<span class="text-slate-500">Expiré le ${new Date(userService.expiryDate).toLocaleDateString('fr-FR')}. Nouveau paiement requis.</span>`;
+                    }
+                } else {
+                    statusBadge = `<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">Nouveau</span>`;
+                    if (service.type === 'devis') {
+                        actionBtnText = 'Demander un devis';
+                        actionBtnClass = 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white';
+                        infoText = `Décrivez votre projet pour obtenir votre devis sur-mesure.`;
+                    } else {
+                        infoText = `Premier paiement de <strong>${service.price.toFixed(2)} €</strong> pour activer.`;
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-2xl border ${isActive ? 'border-indigo-200 shadow-md ring-1 ring-indigo-100' : 'border-slate-200 shadow-sm'} p-6 transition-all flex flex-col justify-between`;
+                
+                card.innerHTML = `
+                    <div>
+                        <!-- Header de carte -->
+                        <div class="flex justify-between items-start gap-4 mb-4">
+                            <div class="w-10 h-10 rounded-xl ${service.color} flex items-center justify-center flex-shrink-0 border">
+                                <i data-lucide="${service.icon}" class="w-5 h-5"></i>
+                            </div>
+                            ${statusBadge}
+                        </div>
+
+                        <!-- Titre & Desc -->
+                        <h4 class="text-base font-bold text-slate-900">${service.name}</h4>
+                        <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">${service.description}</p>
+                        
+                        <!-- Prix / Type -->
+                        <div class="mt-4 flex items-baseline gap-1.5">
+                            ${priceDisplay}
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-3">
+                        <div class="text-[11px] text-slate-500 text-center sm:text-left leading-relaxed">
+                            ${infoText}
+                        </div>
+                        <button onclick="${userService && userService.status === 'devis_demande' ? '' : `toggleService('${service.id}')`}" class="w-full py-2 px-4 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${actionBtnClass}">
+                            <span>${actionBtnText}</span>
+                        </button>
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // --- RENDU DE LA CONSOLE ADMINISTRATEUR GLOBALE SÉCURISÉE ---
+        function renderAdminConsole() {
+            const adminContainer = document.getElementById('admin-devis-list');
+            adminContainer.innerHTML = '';
+
+            if (!currentUser || !currentUser.isAdmin) return;
+
+            let hasPendingRequests = false;
+
+            // Parcourir TOUS les comptes utilisateurs pour chercher des demandes en attente
+            Object.values(users).forEach(user => {
+                if (user.services) {
+                    AVAILABLE_SERVICES.forEach(service => {
+                        if (service.type === 'devis') {
+                            const userService = user.services[service.id];
+                            if (userService && userService.status === 'devis_demande') {
+                                hasPendingRequests = true;
+
+                                const item = document.createElement('div');
+                                item.className = "p-5 bg-slate-800 rounded-2xl border border-slate-700 space-y-4";
+                                
+                                // Générer un ID sûr sans caractères d'email problématiques
+                                const inputIdSafe = `admin-price-input-${user.email.replace(/[@.]/g, '_')}-${service.id}`;
+
+                                item.innerHTML = `
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700 pb-3">
+                                        <div>
+                                            <span class="text-xs font-semibold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">Demande en attente</span>
+                                            <h4 class="text-sm font-bold text-white mt-1.5">${service.name}</h4>
+                                        </div>
+                                        <div class="text-xs text-slate-400">Demandeur : <strong class="text-slate-200">${user.name}</strong> (${user.email})</div>
+                                    </div>
+                                    <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">📝 Description du besoin client :</span>
+                                        <p class="text-sm text-slate-200 italic leading-relaxed">"${userService.clientNotes}"</p>
+                                    </div>
+                                    <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                                        <div class="flex items-center gap-2 max-w-xs w-full sm:w-auto">
+                                            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider flex-shrink-0">Fixer le prix (€) :</span>
+                                            <div class="relative flex-1">
+                                                <input type="number" id="${inputIdSafe}" placeholder="Ex: 1500" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white font-bold focus:outline-none focus:ring-1 focus:ring-amber-400">
+                                                <span class="absolute right-3 top-1.5 text-slate-400 text-sm">€</span>
+                                            </div>
+                                        </div>
+                                        <button onclick="sendDevisPriceFromAdmin('${user.email}', '${service.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 font-semibold">
+                                            <span>Valider et envoyer le tarif</span>
+                                            <i data-lucide="check" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                `;
+
+                                adminContainer.appendChild(item);
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (!hasPendingRequests) {
+                adminContainer.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-sm italic border border-dashed border-slate-800 rounded-2xl">
+                        Aucune demande de devis client en attente pour le moment. Connectez-vous avec un compte client pour soumettre un projet, puis revenez ici pour le traiter !
+                    </div>
+                `;
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderPaymentHistory() {
+            const listContainer = document.getElementById('payments-history-list');
+            listContainer.innerHTML = '';
+
+            const history = currentUser ? currentUser.paymentHistory : [];
+
+            if (!history || history.length === 0) {
+                listContainer.innerHTML = `<p class="text-slate-400 text-sm italic text-center py-4">Aucune transaction effectuée.</p>`;
+                return;
+            }
+
+            history.forEach(tx => {
+                const dateObj = new Date(tx.date);
+                const dateFormatted = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                
+                const isFree = tx.amount === 0;
+
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100";
+                
+                item.innerHTML = `
+                    <div class="min-w-0 flex-1 pr-2">
+                        <p class="text-xs font-bold text-slate-900 truncate">${tx.serviceName}</p>
+                        <p class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                            <span>${dateFormatted}</span>
+                            <span>•</span>
+                            <span class="truncate">${tx.mode}</span>
+                        </p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-xs font-extrabold ${isFree ? 'text-emerald-600' : 'text-slate-900'}">
+                            ${isFree ? 'Gratuit' : `-${tx.amount.toFixed(2)} €`}
+                        </p>
+                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">${tx.type}</p>
+                    </div>
+                `;
+
+                listContainer.appendChild(item);
+            });
+        }
+
+        function clearPaymentHistory() {
+            if (!currentUser) return;
+            currentUser.paymentHistory = [];
+            users[currentUser.email] = currentUser;
+            saveUsers();
+            saveSession();
+            showNotification("Historique des transactions vidé.", "info");
+            updateDashboard();
+        }
+
+        // --- STATISTIQUES DU TABLEAU DE BORD ---
+        function updateDashboard() {
+            if (!currentUser) return;
+
+            document.getElementById('dashboard-user-name').textContent = currentUser.name;
+
+            // Affichage de la console d'administration sécurisée uniquement si isAdmin est vrai
+            const adminConsoleSection = document.getElementById('admin-console-section');
+            if (currentUser.isAdmin) {
+                adminConsoleSection.classList.remove('hidden');
+            } else {
+                adminConsoleSection.classList.add('hidden');
+            }
+
+            let activeCount = 0;
+            let cancelledCount = 0;
+            let estimatedMonthlyCost = 0;
+            let estimatedAnnualCost = 0;
+            let estimatedDevisCost = 0;
+
+            AVAILABLE_SERVICES.forEach(service => {
+                const userService = currentUser.services[service.id];
+                if (userService) {
+                    if (userService.status === 'active') {
+                        activeCount++;
+                        
+                        if (service.type === 'mensuel') {
+                            estimatedMonthlyCost += service.price;
+                        } else if (service.type === 'annuel') {
+                            estimatedAnnualCost += service.price;
+                        } else if (service.type === 'devis' && userService.devisAmount) {
+                            estimatedDevisCost += userService.devisAmount;
+                        }
+                    } else if (userService.hasPaidOnce) {
+                        cancelledCount++;
+                    }
+                }
+            });
+
+            // Afficher les statistiques
+            document.getElementById('stat-active-count').textContent = activeCount;
+            document.getElementById('stat-cancelled-count').textContent = cancelledCount;
+            document.getElementById('stat-total-cost').textContent = `${estimatedMonthlyCost.toFixed(2)} €/m`;
+            document.getElementById('stat-annual-cost').textContent = `${estimatedAnnualCost.toFixed(2)} €/an`;
+            document.getElementById('stat-devis-cost').textContent = `${estimatedDevisCost.toFixed(2)} €`;
+
+            // Rendu des listes et de la console d'administration
+            renderServices();
+            renderAdminConsole();
+            renderPaymentHistory();
+        }
+    </script>
 </body>
 </html>
