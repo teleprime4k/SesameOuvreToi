@@ -579,1140 +579,496 @@
     </footer>
 
     <!-- LOGIC APPLICATION -->
-    <script>
-        // --- BASE DE DONNÉES EN MÉMOIRE (SIMULÉE AVEC LOCALSTORAGE) ---
-        const LOCAL_STORAGE_USERS_KEY = 'saasify_users';
-        const LOCAL_STORAGE_SESSION_KEY = 'saasify_current_user';
-        const LOCAL_STORAGE_PAYMENTS_KEY = 'saasify_payments';
+    <script type="module">
+        // 1. IMPORTATION DE FIREBASE SDK v10
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, collection, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 1. SERVICES STATIQUES DISPONIBLES (INCLUANT LES 2 SERVICES SOUS DEVIS)
-        const AVAILABLE_SERVICES = [
-            {
-                id: 'srv-cloud',
-                name: 'Stockage Cloud Pro',
-                description: 'Sauvegardez vos données d\'entreprise sur nos serveurs hautement sécurisés.',
-                price: 15.00,
-                type: 'mensuel',
-                icon: 'cloud-lightning',
-                color: 'bg-brand-500/10 text-brand-300 border-brand-500/20'
-            },
-            {
-                id: 'srv-crm',
-                name: 'Gestion CRM Avancé',
-                description: 'Un outil complet de gestion des clients pour propulser vos ventes.',
-                price: 49.00,
-                type: 'mensuel',
-                icon: 'users',
-                color: 'bg-purple-500/10 text-purple-300 border-purple-500/20'
-            },
-            {
-                id: 'srv-cdn',
-                name: 'CDN Ultra-Rapide (Global)',
-                description: 'Accélérez le chargement de votre site internet à travers le monde entier.',
-                price: 180.00,
-                type: 'annuel',
-                icon: 'globe',
-                color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-            },
-            {
-                id: 'srv-security',
-                name: 'Pack Sécurité & Pare-feu',
-                description: 'Analyse automatique des menaces et protection DDoS continue.',
-                price: 350.00,
-                type: 'annuel',
-                icon: 'shield',
-                color: 'bg-amber-500/10 text-amber-300 border-amber-500/20'
-            },
-            {
-                id: 'srv-devis-app',
-                name: 'Création d\'App Mobile Custom',
-                description: 'Développement d\'une application mobile sur-mesure iOS et Android (Sous Devis).',
-                price: null,
-                type: 'devis',
-                icon: 'smartphone',
-                color: 'bg-rose-500/10 text-rose-300 border-rose-500/20'
-            },
-            {
-                id: 'srv-devis-design',
-                name: 'Design de Marque & UX complet',
-                description: 'Refonte d\'identité visuelle, logos, chartes graphiques et parcours utilisateurs (Sous Devis).',
-                price: null,
-                type: 'devis',
-                icon: 'palette',
-                color: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20'
-            }
+        // Configuration Firebase fournie
+        const firebaseConfig = {
+            apiKey: "AIzaSyBs4p7kaG0d6GMuMRiThl1W7_ZTncLCBCo",
+            authDomain: "sesameouvretoi-13.firebaseapp.com",
+            projectId: "sesameouvretoi-13",
+            storageBucket: "sesameouvretoi-13.firebasestorage.app",
+            messagingSenderId: "167364948430",
+            appId: "1:167364948430:web:e1874c21b6d39fd412bb9f",
+            measurementId: "G-VRWJPSC723"
+        };
+
+        // Initialisation
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Données statiques des services de base
+        const SERVICES_DATA = [
+            { id: 'srv_web', name: 'Hébergement Web Pro', type: 'mensuel', price: 29.90, desc: 'Serveur ultra-rapide, NVMe, SSL inclus et sauvegardes quotidiennes.' },
+            { id: 'srv_seo', name: 'Campagne Référencement SEO', type: 'mensuel', price: 149.00, desc: 'Optimisation des mots-clés, netlinking mensuel et rapports de positionnement.' },
+            { id: 'srv_cloud', name: 'Sauvegarde Cloud Automatisée', type: 'annuel', price: 199.00, desc: 'Stockage sécurisé de 2 To avec chiffrement de bout en bout.' },
+            { id: 'srv_support', name: 'Support Technique 24/7 Dédié', type: 'annuel', price: 590.00, desc: 'Ligne directe avec un ingénieur, intervention en moins de 30 minutes.' },
+            { id: 'srv_audit', name: 'Audit Sécurité & Pénétration', type: 'devis', price: 0, desc: 'Analyse complète de vos vulnérabilités avec rapport détaillé et correctifs.' },
+            { id: 'srv_dev', name: 'Développement Application Sur-Mesure', type: 'devis', price: 0, desc: 'Conception et réalisation de votre projet web ou mobile de A à Z.' }
         ];
 
-        // 2. ÉTATS GLOBAUX
-        let users = JSON.parse(localStorage.getItem(LOCAL_STORAGE_USERS_KEY)) || {};
-        let currentUser = JSON.parse(localStorage.getItem(LOCAL_STORAGE_SESSION_KEY)) || null;
-        let currentFilter = 'all';
-        let activeAdminChatUserEmail = null; // Email de l'utilisateur actif sélectionné dans le tchat d'admin
+        // États locaux de l'application synchronisés avec Firebase
+        let users = [];
+        let chats = [];
+        let payments = [];
+        let currentUser = null;
+
+        // 2. SYNCHRONISATION EN TEMPS RÉEL (FIRESTORE LISTENERS)
         
-        // Date de simulation de la démo
-        let simulatedDate = new Date();
-        document.getElementById('simulated-date').value = simulatedDate.toISOString().split('T')[0];
-
-        // Service en cours de transaction
-        let serviceUnderTransaction = null;
-        let serviceUnderDevisRequest = null;
-
-        // Configuration du compte Administrateur par défaut si inexistant
-        if (!users['admin@saasify.com']) {
-            users['admin@saasify.com'] = {
-                name: "Administrateur Principal",
-                email: "admin@saasify.com",
-                password: "admin123",
-                isAdmin: true,
-                services: {},
-                paymentHistory: [],
-                messages: []
-            };
-            localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
-        }
-
-        // Initialisation de la page
-        window.addEventListener('DOMContentLoaded', () => {
-            initApp();
-            lucide.createIcons();
+        // Écouter la collection "users"
+        onSnapshot(collection(db, "users"), (snapshot) => {
+            users = [];
+            snapshot.forEach(docSnap => {
+                users.push(docSnap.data());
+            });
+            // Mettre à jour l'utilisateur actuel si ses données changent
+            if (currentUser) {
+                const updated = users.find(u => u.id === currentUser.id);
+                if (updated) currentUser = updated;
+            }
+            updateUI();
         });
 
-        function initApp() {
-            if (currentUser) {
-                // Charge l'utilisateur depuis la base "fraîche" de localStorage
-                currentUser = users[currentUser.email] || currentUser;
-                
-                // S'assurer que la structure de messages est présente
-                if (!currentUser.messages) {
-                    currentUser.messages = [
-                        { sender: 'admin', text: "Bonjour ! Bienvenue sur SaaSify. N'hésitez pas à nous envoyer un message ici si vous avez des questions sur nos abonnements ou vos devis.", date: new Date().toISOString() }
-                    ];
-                    users[currentUser.email] = currentUser;
-                    saveUsers();
-                }
-
-                switchView('dashboard');
-                updateDashboard();
-            } else {
-                switchView('home');
-            }
-        }
-
-        // --- NOTIFICATIONS (TOASTS) ---
-        function showNotification(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            let bgClass = 'bg-dark-900 border-slate-800 text-slate-100';
-            let icon = 'info';
-            let iconColor = 'text-brand-400';
-
-            if (type === 'success') {
-                bgClass = 'bg-emerald-950/90 text-emerald-200 border-emerald-500/30';
-                icon = 'check-circle';
-                iconColor = 'text-emerald-400';
-            } else if (type === 'error') {
-                bgClass = 'bg-rose-950/90 text-rose-200 border-rose-500/30';
-                icon = 'alert-triangle';
-                iconColor = 'text-rose-400';
-            } else if (type === 'warning') {
-                bgClass = 'bg-amber-950/90 text-amber-200 border-amber-500/30';
-                icon = 'alert-circle';
-                iconColor = 'text-amber-400';
-            }
-
-            toast.className = `p-4 rounded-xl shadow-lg border flex items-center gap-3 max-w-sm pointer-events-auto transform transition-all translate-y-2 opacity-0 duration-300 ${bgClass}`;
-            toast.innerHTML = `
-                <i data-lucide="${icon}" class="w-5 h-5 flex-shrink-0 ${iconColor}"></i>
-                <div class="text-xs font-semibold">${message}</div>
-            `;
-            
-            container.appendChild(toast);
-            lucide.createIcons();
-            
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        // --- CONTRÔLE DES VUES ---
-        function switchView(viewName) {
-            document.getElementById('view-home').classList.add('hidden');
-            document.getElementById('view-login').classList.add('hidden');
-            document.getElementById('view-register').classList.add('hidden');
-            document.getElementById('view-dashboard').classList.add('hidden');
-
-            document.getElementById(`view-${viewName}`).classList.remove('hidden');
-
-            if (currentUser) {
-                document.getElementById('nav-visitor').classList.add('hidden');
-                document.getElementById('nav-user').classList.remove('hidden');
-                document.getElementById('user-display-name').textContent = currentUser.name;
-                document.getElementById('user-display-email').textContent = currentUser.email;
-                
-                // Afficher ou masquer le badge admin dans le header
-                document.getElementById('user-admin-badge').classList.toggle('hidden', !currentUser.isAdmin);
-            } else {
-                document.getElementById('nav-visitor').classList.remove('hidden');
-                document.getElementById('nav-user').classList.add('hidden');
-            }
-        }
-
-        // --- AUTHENTIFICATION ---
-        function handleRegisterSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('register-name').value.trim();
-            const email = document.getElementById('register-email').value.trim().toLowerCase();
-            const password = document.getElementById('register-password').value;
-
-            if (users[email]) {
-                showNotification("Un compte avec cet email existe déjà.", "error");
-                return;
-            }
-
-            const newUser = {
-                name: name,
-                email: email,
-                password: password,
-                isAdmin: false, 
-                services: {}, 
-                paymentHistory: [],
-                messages: [
-                    { sender: 'admin', text: `Bonjour ${name} ! Bienvenue sur SaaSify. N'hésitez pas à nous envoyer un message ici si vous avez des questions sur nos abonnements ou vos devis.`, date: new Date().toISOString() }
-                ]
-            };
-
-            users[email] = newUser;
-            saveUsers();
-            
-            currentUser = newUser;
-            saveSession();
-
-            showNotification(`Bienvenue, votre compte a bien été créé !`, 'success');
-            switchView('dashboard');
-            updateDashboard();
-            
-            document.getElementById('register-form').reset();
-        }
-
-        function handleLoginSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim().toLowerCase();
-            const password = document.getElementById('login-password').value;
-
-            const user = users[email];
-            if (!user || user.password !== password) {
-                showNotification("Email ou mot de passe incorrect.", "error");
-                return;
-            }
-
-            currentUser = user;
-            
-            // S'assurer de la présence des messages
-            if (!currentUser.messages) {
-                currentUser.messages = [
-                    { sender: 'admin', text: "Bonjour ! Bienvenue sur SaaSify. N'hésitez pas à nous envoyer un message ici si vous avez des questions.", date: new Date().toISOString() }
-                ];
-                users[email] = currentUser;
-                saveUsers();
-            }
-
-            saveSession();
-
-            showNotification(`Heureux de vous revoir, ${user.name} ! ${user.isAdmin ? '👑 Mode Administrateur activé.' : ''}`, 'success');
-            switchView('dashboard');
-            updateDashboard();
-
-            document.getElementById('login-form').reset();
-        }
-
-        // --- DECONNEXION ---
-        function handleLogout() {
-            currentUser = null;
-            activeAdminChatUserEmail = null;
-            localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
-            showNotification("Vous avez été déconnecté.", "info");
-            switchView('home');
-        }
-
-        // --- ENREGISTREMENTS LOCAL STORAGE ---
-        function saveUsers() {
-            localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
-        }
-
-        // --- LOGIQUE APPLICATION ---
-        function saveSession() {
-            localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(currentUser));
-        }
-
-        // --- GESTION DU TEMPS DE SIMULATION ---
-        function changeSimulationDate(val) {
-            simulatedDate = new Date(val);
-            showNotification(`Date virtuelle modifiée : ${simulatedDate.toLocaleDateString('fr-FR')}`, 'info');
-            updateDashboard();
-        }
-
-        function resetSimulationDate() {
-            simulatedDate = new Date();
-            document.getElementById('simulated-date').value = simulatedDate.toISOString().split('T')[0];
-            showNotification("Date réinitialisée au jour actuel.", "info");
-            updateDashboard();
-        }
-
-        // --- LOGIQUE ABONNEMENT ET CALCULS DE TEMPS ---
-        function checkCoverage(userService) {
-            if (!userService || !userService.expiryDate) {
-                return { covered: false, remainingDays: 0 };
-            }
-
-            const expiry = new Date(userService.expiryDate);
-            const timeDiff = expiry.getTime() - simulatedDate.getTime();
-            const remainingDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-            return {
-                covered: remainingDays > 0,
-                remainingDays: Math.max(0, remainingDays)
-            };
-        }
-
-        function filterServices(category) {
-            currentFilter = category;
-            
-            ['all', 'mensuel', 'annuel', 'devis'].forEach(cat => {
-                const btn = document.getElementById(`filter-${cat}`);
-                if (cat === category) {
-                    btn.className = "text-xs font-semibold px-2.5 py-1.5 rounded-md bg-brand-500 text-white shadow-sm transition-all";
-                } else {
-                    btn.className = "text-xs font-medium px-2.5 py-1.5 text-slate-400 rounded-md hover:bg-slate-800 hover:text-white transition-all";
-                }
+        // Écouter la collection "chats"
+        onSnapshot(collection(db, "chats"), (snapshot) => {
+            chats = [];
+            snapshot.forEach(docSnap => {
+                chats.push(docSnap.data());
             });
-
-            renderServices();
-        }
-
-        // --- MODAL DE DEMANDE DE DEVIS (OUVERTURE & SAISIE) ---
-        function openDevisRequestModal(service) {
-            serviceUnderDevisRequest = service;
-            document.getElementById('devis-service-name-input').value = service.name;
-            document.getElementById('devis-client-notes').value = "";
-
-            const modal = document.getElementById('devis-request-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('devis-modal-content').classList.remove('scale-95');
-                document.getElementById('devis-modal-content').classList.add('scale-100');
-            }, 10);
-        }
-
-        function closeDevisRequestModal() {
-            const modal = document.getElementById('devis-request-modal');
-            document.getElementById('devis-modal-content').classList.add('scale-95');
-            document.getElementById('devis-modal-content').classList.remove('scale-100');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                serviceUnderDevisRequest = null;
-            }, 200);
-        }
-
-        function handleDevisRequestSubmit(e) {
-            e.preventDefault();
-            if (!serviceUnderDevisRequest || !currentUser) return;
-
-            const service = serviceUnderDevisRequest;
-            const clientNotes = document.getElementById('devis-client-notes').value.trim();
-
-            // Mettre à jour l'état du service à "devis_demande"
-            currentUser.services[service.id] = {
-                status: 'devis_demande',
-                clientNotes: clientNotes,
-                hasPaidOnce: false,
-                devisDate: simulatedDate.toISOString()
-            };
-
-            // Ajouter automatiquement un message de suivi dans le support chat pour plus de réalisme
-            currentUser.messages.push({
-                sender: 'client',
-                text: `[Système] J'ai soumis une demande de devis pour le service "${service.name}". Ma description : "${clientNotes}"`,
-                date: simulatedDate.toISOString()
-            });
-
-            users[currentUser.email] = currentUser;
-            saveUsers();
-            saveSession();
-
-            showNotification(`Votre demande de devis pour "${service.name}" a été transmise ! Connectez-vous avec le compte administrateur pour lui attribuer un tarif.`, 'success');
-            
-            closeDevisRequestModal();
-            updateDashboard();
-        }
-
-        // --- CONSOLE D'ADMINISTRATION : ENVOYER LE PRIX DU DEVIS À UN CLIENT ---
-        function sendDevisPriceFromAdmin(clientEmail, serviceId) {
-            // ID unique pour cibler l'input du prix sans conflits de caractères spéciaux
-            const inputId = `admin-price-input-${clientEmail.replace(/[@.]/g, '_')}-${serviceId}`;
-            const priceInput = document.getElementById(inputId);
-            const price = parseFloat(priceInput.value);
-
-            if (isNaN(price) || price <= 0) {
-                showNotification("Veuillez saisir un tarif valide supérieur à 0 €.", "error");
-                return;
-            }
-
-            const targetUser = users[clientEmail];
-            if (!targetUser || !targetUser.services[serviceId]) return;
-
-            // Passer le statut à 'devis_propose' et fixer le devisAmount
-            targetUser.services[serviceId].status = 'devis_propose';
-            targetUser.services[serviceId].devisAmount = price;
-            targetUser.services[serviceId].devisDate = simulatedDate.toISOString();
-
-            // Envoyer un message automatique de l'admin pour notifier
-            const srvName = AVAILABLE_SERVICES.find(s=>s.id===serviceId).name;
-            if (!targetUser.messages) targetUser.messages = [];
-            targetUser.messages.push({
-                sender: 'admin',
-                text: `[Système - Devis Rempli] Nous avons évalué votre besoin pour "${srvName}". Le tarif est fixé à ${price.toFixed(2)} € / an. Vous pouvez l'accepter directement sur votre catalogue !`,
-                date: simulatedDate.toISOString()
-            });
-
-            // Enregistrer globalement
-            users[clientEmail] = targetUser;
-            saveUsers();
-
-            // Si l'administrateur s'auto-évalue (cas de test de l'admin)
-            if (currentUser && currentUser.email === clientEmail) {
-                currentUser = targetUser;
-                saveSession();
-            }
-
-            showNotification(`Le prix du devis pour "${srvName}" a été fixé à ${price.toFixed(2)} € pour le client ${targetUser.name} !`, 'success');
-            updateDashboard();
-        }
-
-        // --- MODAL DE PAIEMENT ---
-        function openPaymentModal(service, customPrice = null) {
-            serviceUnderTransaction = service;
-            document.getElementById('modal-service-name').textContent = service.name;
-            
-            let badgeText = '';
-            let finalPrice = customPrice !== null ? customPrice : service.price;
-
-            if (service.type === 'mensuel') badgeText = 'Abonnement Mensuel';
-            else if (service.type === 'annuel') badgeText = 'Abonnement Annuel';
-            else if (service.type === 'devis') badgeText = 'Projet sous Devis (Annuel)';
-
-            document.getElementById('modal-service-badge').textContent = badgeText;
-            document.getElementById('modal-service-price').textContent = `${finalPrice.toFixed(2)} €`;
-
-            const modal = document.getElementById('payment-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                document.getElementById('payment-modal-content').classList.remove('scale-95');
-                document.getElementById('payment-modal-content').classList.add('scale-100');
-            }, 10);
-        }
-
-        function closePaymentModal() {
-            const modal = document.getElementById('payment-modal');
-            document.getElementById('payment-modal-content').classList.add('scale-95');
-            document.getElementById('payment-modal-content').classList.remove('scale-100');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                serviceUnderTransaction = null;
-            }, 200);
-        }
-
-        function handlePaymentSubmit(e) {
-            e.preventDefault();
-            if (!serviceUnderTransaction || !currentUser) return;
-
-            const service = serviceUnderTransaction;
-            const nowStr = simulatedDate.toISOString();
-            const userService = currentUser.services[service.id];
-
-            // Récupérer le prix (fixe ou généré par le devis)
-            let actualPrice = service.price;
-            if (service.type === 'devis' && userService && userService.devisAmount) {
-                actualPrice = userService.devisAmount;
-            }
-
-            // Calculer la date d'expiration
-            const expiry = new Date(simulatedDate);
-            if (service.type === 'mensuel') {
-                expiry.setDate(expiry.getDate() + 30);
-            } else {
-                expiry.setFullYear(expiry.getFullYear() + 1);
-            }
-
-            // Enregistrer l'état actif
-            currentUser.services[service.id] = {
-                status: 'active',
-                lastPaymentDate: nowStr,
-                expiryDate: expiry.toISOString(),
-                hasPaidOnce: true,
-                devisAmount: service.type === 'devis' ? actualPrice : undefined,
-                clientNotes: userService ? userService.clientNotes : undefined
-            };
-
-            // Ajouter à l'historique
-            const transaction = {
-                id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
-                serviceId: service.id,
-                serviceName: service.name,
-                amount: actualPrice,
-                date: nowStr,
-                type: service.type,
-                mode: service.type === 'devis' ? 'Validation & Paiement de Devis' : 'Premier paiement d\'activation'
-            };
-
-            if (!currentUser.paymentHistory) currentUser.paymentHistory = [];
-            currentUser.paymentHistory.unshift(transaction);
-
-            users[currentUser.email] = currentUser;
-            saveUsers();
-            saveSession();
-
-            showNotification(`Félicitations ! Le service "${service.name}" est activé avec succès.`, 'success');
-            
-            closePaymentModal();
-            updateDashboard();
-        }
-
-        // --- ACTIONS SUR LES SERVICES ---
-        function toggleService(serviceId) {
-            if (!currentUser) return;
-
-            const service = AVAILABLE_SERVICES.find(s => s.id === serviceId);
-            if (!service) return;
-
-            const userService = currentUser.services[serviceId];
-
-            // SI DÉJÀ ACTIF -> ALORS ON DÉSACTIVE
-            if (userService && userService.status === 'active') {
-                userService.status = 'inactive';
-                showNotification(`Le service "${service.name}" a été désactivé.`, 'warning');
-                
-                users[currentUser.email] = currentUser;
-                saveUsers();
-                saveSession();
-                updateDashboard();
-                return;
-            }
-
-            // SI TYPE DEVIS & AUCUN DEVIS DISPONIBLE OU PROPOSÉ
-            if (service.type === 'devis') {
-                if (!userService || (!userService.status && !userService.hasPaidOnce)) {
-                    openDevisRequestModal(service);
-                    return;
-                }
-                if (userService.status === 'devis_demande') {
-                    showNotification("Votre demande est en cours d'analyse par l'administrateur. Veuillez vous connecter au compte admin pour lui attribuer un tarif.", "warning");
-                    return;
-                }
-            }
-
-            // SI PREMIÈRE ACTIVATION POUR FORMULE CLASSIQUE OU PREMIER PAIEMENT DE DEVIS
-            if (!userService || !userService.hasPaidOnce) {
-                if (service.type === 'devis' && userService && userService.status === 'devis_propose') {
-                    openPaymentModal(service, userService.devisAmount);
-                } else {
-                    openPaymentModal(service);
-                }
-                return;
-            }
-
-            // IL A DÉJÀ PAYÉ AU MOINS UNE FOIS -> RÈGLES DE COUVERTURE TEMPORELLE
-            const coverage = checkCoverage(userService);
-
-            if (coverage.covered) {
-                userService.status = 'active';
-
-                const freeTransaction = {
-                    id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
-                    serviceId: service.id,
-                    serviceName: service.name,
-                    amount: 0.00,
-                    date: simulatedDate.toISOString(),
-                    type: service.type,
-                    mode: 'Réactivation gratuite (période en cours)'
-                };
-
-                currentUser.paymentHistory.unshift(freeTransaction);
-                showNotification(`Réactivation gratuite pour "${service.name}" (il vous reste ${coverage.remainingDays} jours de couverture).`, 'success');
-                
-                users[currentUser.email] = currentUser;
-                saveUsers();
-                saveSession();
-                updateDashboard();
-            } else {
-                showNotification("Votre couverture précédente est expirée. Un nouveau paiement est nécessaire.", "info");
-                if (service.type === 'devis') {
-                    openPaymentModal(service, userService.devisAmount);
-                } else {
-                    openPaymentModal(service);
-                }
-            }
-        }
-
-        // --- SYSTEM DE MESSAGERIE (SUPPORT CHAT) ---
-
-        // Envoi client -> admin
-        function handleClientSendMessage(e) {
-            e.preventDefault();
-            if (!currentUser) return;
-
-            const input = document.getElementById('client-chat-input');
-            const messageText = input.value.trim();
-
-            if (!messageText) return;
-
-            if (!currentUser.messages) currentUser.messages = [];
-
-            currentUser.messages.push({
-                sender: 'client',
-                text: messageText,
-                date: simulatedDate.toISOString()
-            });
-
-            // Enregistrer dans la session et les utilisateurs globaux
-            users[currentUser.email] = currentUser;
-            saveUsers();
-            saveSession();
-
-            input.value = "";
-            showNotification("Message envoyé au support administrateur !", "success");
-            updateDashboard();
-
-            // Faire défiler vers le bas la zone de tchat client
-            setTimeout(() => {
-                const chatContainer = document.getElementById('client-chat-messages');
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 50);
-        }
-
-        // Envoi admin -> client
-        function handleAdminSendMessage(e) {
-            e.preventDefault();
-            if (!currentUser || !currentUser.isAdmin || !activeAdminChatUserEmail) return;
-
-            const input = document.getElementById('admin-chat-input');
-            const messageText = input.value.trim();
-
-            if (!messageText) return;
-
-            const targetClient = users[activeAdminChatUserEmail];
-            if (!targetClient) return;
-
-            if (!targetClient.messages) targetClient.messages = [];
-
-            targetClient.messages.push({
-                sender: 'admin',
-                text: messageText,
-                date: simulatedDate.toISOString()
-            });
-
-            // Enregistrer globalement
-            users[activeAdminChatUserEmail] = targetClient;
-            saveUsers();
-
-            // Si l'administrateur s'auto-répond (lorsqu'il est connecté sur son propre tchat de simulation)
-            if (currentUser.email === activeAdminChatUserEmail) {
-                currentUser = targetClient;
-                saveSession();
-            }
-
-            input.value = "";
-            showNotification(`Message de réponse envoyé à ${targetClient.name} !`, "success");
-            updateDashboard();
-
-            // Défilement
-            setTimeout(() => {
-                const chatContainer = document.getElementById('admin-chat-messages');
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }, 50);
-        }
-
-        function selectAdminActiveChat(clientEmail) {
-            activeAdminChatUserEmail = clientEmail;
+            renderClientChat();
             renderAdminChat();
+        });
+
+        // Écouter la collection "payments"
+        onSnapshot(collection(db, "payments"), (snapshot) => {
+            payments = [];
+            snapshot.forEach(docSnap => {
+                payments.push(docSnap.data());
+            });
+            renderPaymentHistory();
+        });
+
+        // Initialisation de la base de données par défaut si vide (Seed)
+        async function checkAndSeedDatabase() {
+            const usersSnap = await getDocs(collection(db, "users"));
+            if (usersSnap.empty) {
+                // Création des utilisateurs initiaux par défaut
+                const defaultUsers = [
+                    { id: 'usr_1', name: 'Jean Dupont', email: 'jean.dupont@societe.com', isAdmin: false, services: { 'srv_web': { status: 'active', coverage: { covered: true } }, 'srv_seo': { status: 'inactive' } } },
+                    { id: 'usr_2', name: 'Marie Loge', email: 'marie.loge@startup.fr', isAdmin: false, services: { 'srv_cloud': { status: 'active', coverage: { covered: true } }, 'srv_audit': { status: 'devis_demande' } } },
+                    { id: 'usr_admin', name: 'Administrateur', email: 'admin@saasify.io', isAdmin: true, services: {} }
+                ];
+                for (const u of defaultUsers) {
+                    await setDoc(doc(db, "users", u.id), u);
+                }
+                
+                // Création des messages initiaux par défaut
+                const defaultChats = [
+                    { id: 'c1', userId: 'usr_1', userName: 'Jean Dupont', message: 'Bonjour, j\'ai une question sur mon hébergement web.', timestamp: Date.now() - 50000, isAdmin: false },
+                    { id: 'c2', userId: 'usr_1', userName: 'Administrateur', message: 'Bonjour Jean, je vous écoute. Quel est le problème ?', timestamp: Date.now() - 40000, isAdmin: true }
+                ];
+                for (const c of defaultChats) {
+                    await setDoc(doc(db, "chats", c.id), c);
+                }
+
+                // Création des paiements par défaut
+                const defaultPayments = [
+                    { id: 'p1', userId: 'usr_1', userName: 'Jean Dupont', serviceName: 'Hébergement Web Pro', amount: 29.90, date: '10/05/2026', status: 'Payé' },
+                    { id: 'p2', userId: 'usr_2', userName: 'Marie Loge', serviceName: 'Sauvegarde Cloud Automatisée', amount: 199.00, date: '08/05/2026', status: 'Payé' }
+                ];
+                for (const p of defaultPayments) {
+                    await setDoc(doc(db, "payments", p.id), p);
+                }
+            }
+            
+            // Sélection par défaut du premier utilisateur au chargement
+            const updatedSnap = await getDocs(collection(db, "users"));
+            const firstUser = updatedSnap.docs[0].data();
+            switchUser(firstUser.id);
         }
 
-        // Rendu de la boîte de discussion du Client
+        // 3. EXPOSITION DES FONCTIONS AU CONTEXTE GLOBAL WINDOW (Pour conserver les onclick="" du HTML)
+        
+        window.switchUser = function(userId) {
+            currentUser = users.find(u => u.id === userId) || users[0];
+            document.getElementById('current-user-name').textContent = currentUser.name;
+            document.getElementById('current-user-role').textContent = currentUser.isAdmin ? 'Accès Administrateur' : 'Accès Client';
+            
+            const badge = document.getElementById('user-badge');
+            if (currentUser.isAdmin) {
+                badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-900 text-purple-200 border border-purple-700 animate-pulse";
+            } else {
+                badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900 text-emerald-200 border border-emerald-700";
+            }
+            
+            updateUI();
+        };
+
+        window.toggleService = async function(serviceId) {
+            if (!currentUser || currentUser.isAdmin) return;
+            const userRef = doc(db, "users", currentUser.id);
+            const userSrv = currentUser.services[serviceId] || { status: 'inactive' };
+            const service = SERVICES_DATA.find(s => s.id === serviceId);
+
+            let newStatus = 'inactive';
+            if (userSrv.status === 'inactive') {
+                newStatus = 'active';
+                // Ajouter à l'historique des paiements si payant
+                if (service.price > 0) {
+                    const payId = 'pay_' + Date.now();
+                    await setDoc(doc(db, "payments", payId), {
+                        id: payId,
+                        userId: currentUser.id,
+                        userName: currentUser.name,
+                        serviceName: service.name,
+                        amount: service.price,
+                        date: new Date().toLocaleDateString('fr-FR'),
+                        status: 'Payé'
+                    });
+                }
+            }
+
+            const updatedServices = { ...currentUser.services };
+            updatedServices[serviceId] = { status: newStatus, coverage: { covered: newStatus === 'active' } };
+
+            await updateDoc(userRef, { services: updatedServices });
+        };
+
+        window.requestDevis = async function(serviceId) {
+            if (!currentUser || currentUser.isAdmin) return;
+            const userRef = doc(db, "users", currentUser.id);
+            const updatedServices = { ...currentUser.services };
+            updatedServices[serviceId] = { status: 'devis_demande' };
+            await updateDoc(userRef, { services: updatedServices });
+        };
+
+        window.acceptDevis = async function(serviceId) {
+            if (!currentUser || currentUser.isAdmin) return;
+            const userRef = doc(db, "users", currentUser.id);
+            const userSrv = currentUser.services[serviceId];
+            if (!userSrv || userSrv.status !== 'devis_propose') return;
+
+            const service = SERVICES_DATA.find(s => s.id === serviceId);
+            const updatedServices = { ...currentUser.services };
+            updatedServices[serviceId] = { ...userSrv, status: 'active', coverage: { covered: true } };
+
+            // Ajouter à l'historique de paiement
+            const payId = 'pay_' + Date.now();
+            await setDoc(doc(db, "payments", payId), {
+                id: payId,
+                userId: currentUser.id,
+                userName: currentUser.name,
+                serviceName: service.name,
+                amount: userSrv.devisAmount || 0,
+                date: new Date().toLocaleDateString('fr-FR'),
+                status: 'Payé'
+            });
+
+            await updateDoc(userRef, { services: updatedServices });
+        };
+
+        window.sendClientMessage = async function() {
+            if (!currentUser || currentUser.isAdmin) return;
+            const input = document.getElementById('client-chat-input');
+            const txt = input.value.trim();
+            if (!txt) return;
+
+            const chatId = 'msg_' + Date.now();
+            await setDoc(doc(db, "chats", chatId), {
+                id: chatId,
+                userId: currentUser.id,
+                userName: currentUser.name,
+                message: txt,
+                timestamp: Date.now(),
+                isAdmin: false
+            });
+            input.value = '';
+        };
+
+        window.sendAdminMessage = async function(targetUserId) {
+            const input = document.getElementById(`admin-chat-input-${targetUserId}`);
+            if (!input) return;
+            const txt = input.value.trim();
+            if (!txt) return;
+
+            const chatId = 'msg_' + Date.now();
+            await setDoc(doc(db, "chats", chatId), {
+                id: chatId,
+                userId: targetUserId,
+                userName: 'Administrateur',
+                message: txt,
+                timestamp: Date.now(),
+                isAdmin: true
+            });
+            input.value = '';
+        };
+
+        window.proposerDevis = async function(userId, serviceId) {
+            const input = document.getElementById(`devis-amount-${userId}-${serviceId}`);
+            if (!input) return;
+            const amount = parseFloat(input.value);
+            if (isNaN(amount) || amount <= 0) return alert('Montant invalide');
+
+            const targetUser = users.find(u => u.id === userId);
+            if (!targetUser) return;
+
+            const userRef = doc(db, "users", userId);
+            const updatedServices = { ...targetUser.services };
+            updatedServices[serviceId] = { status: 'devis_propose', devisAmount: amount };
+
+            await updateDoc(userRef, { services: updatedServices });
+        };
+
+        // 4. RENDERERS & LOGIQUE D'AFFICHAGE GRAPHIQUE (Inchangés mais reliés à Firebase)
+        
+        function checkCoverage(userSrv) {
+            if (!userSrv) return { covered: false, label: "Non souscrit", color: "text-slate-500 bg-slate-950 border border-slate-800" };
+            if (userSrv.status === 'active') return { covered: true, label: "Actif / Couvert", color: "text-emerald-400 bg-emerald-950/50 border border-emerald-800" };
+            if (userSrv.status === 'devis_demande') return { covered: false, label: "Devis Demandé", color: "text-amber-400 bg-amber-950/50 border border-amber-800" };
+            if (userSrv.status === 'devis_propose') return { covered: false, label: `Devis Reçu (${userSrv.devisAmount}€)`, color: "text-indigo-400 bg-indigo-950/50 border border-indigo-800" };
+            return { covered: false, label: "Non souscrit", color: "text-slate-500 bg-slate-950 border border-slate-800" };
+        }
+
+        function renderServices() {
+            const container = document.getElementById('services-grid');
+            container.innerHTML = '';
+            if (currentUser.isAdmin) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500 border border-dashed border-dark-800 rounded-2xl">
+                    <p class="text-base font-medium">Mode Administrateur actif</p>
+                    <p class="text-xs mt-1 text-slate-600">Veuillez utiliser la console d'administration ci-dessous pour piloter les comptes.</p>
+                </div>`;
+                return;
+            }
+            SERVICES_DATA.forEach(service => {
+                const userSrv = currentUser.services[service.id];
+                const coverage = checkCoverage(userSrv);
+                let btnHtml = '';
+                if (service.type === 'devis') {
+                    if (!userSrv || userSrv.status === 'inactive') {
+                        btnHtml = `<button onclick="requestDevis('${service.id}')" class="w-full text-xs font-semibold py-2.5 px-4 rounded-xl bg-dark-800 text-slate-200 hover:bg-dark-700 border border-dark-800 transition duration-200">Demander un Devis</button>`;
+                    } else if (userSrv.status === 'devis_demande') {
+                        btnHtml = `<button disabled class="w-full text-xs font-semibold py-2.5 px-4 rounded-xl bg-dark-900/50 text-slate-500 border border-dark-800/50 cursor-not-allowed">Étude en cours...</button>`;
+                    } else if (userSrv.status === 'devis_propose') {
+                        btnHtml = `<button onclick="acceptDevis('${service.id}')" class="w-full text-xs font-semibold py-2.5 px-4 rounded-xl bg-gradient-to-r from-brand-500 to-fluid-500 text-white hover:from-brand-600 hover:to-fluid-600 shadow-md shadow-brand-500/10 transition duration-200">Accepter & Payer le Devis</button>`;
+                    } else if (userSrv.status === 'active') {
+                        btnHtml = `<div class="text-center text-xs font-medium py-2.5 text-emerald-500 bg-emerald-950/20 rounded-xl border border-emerald-900/30">✓ Projet en Production</div>`;
+                    }
+                } else {
+                    const isActive = userSrv && userSrv.status === 'active';
+                    btnHtml = `<button onclick="toggleService('${service.id}')" class="w-full text-xs font-semibold py-2.5 px-4 rounded-xl transition duration-200 ${
+                        isActive 
+                        ? 'bg-rose-950/50 text-rose-400 border border-rose-900/50 hover:bg-rose-900/30' 
+                        : 'bg-gradient-to-r from-brand-500 to-fluid-500 text-white hover:from-brand-600 hover:to-fluid-600 shadow-md shadow-brand-500/10'
+                    }">${isActive ? 'Résilier le service' : 'Souscrire Maintenant'}</button>`;
+                }
+                const card = document.createElement('div');
+                card.className = "flex flex-col justify-between bg-dark-900 border border-dark-800 rounded-2xl p-6 hover:border-brand-500/30 transition duration-300 group";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-4 mb-4">
+                            <h3 class="font-bold text-slate-100 group-hover:text-white transition duration-200 text-base leading-snug">${service.name}</h3>
+                            <span class="inline-flex px-2.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide whitespace-nowrap uppercase ${coverage.color}">${coverage.label}</span>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-6">${service.desc}</p>
+                    </div>
+                    <div>
+                        <div class="flex items-baseline gap-1 mb-4">
+                            <span class="text-2xl font-black text-slate-100">${service.price > 0 ? service.price.toFixed(2) + ' €' : 'Sur Devis'}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">${service.type === 'mensuel' ? '/ mois' : service.type === 'annuel' ? '/ an' : ''}</span>
+                        </div>
+                        ${btnHtml}
+                    </div>`;
+                container.appendChild(card);
+            });
+        }
+
         function renderClientChat() {
             const container = document.getElementById('client-chat-messages');
-            container.innerHTML = "";
-
-            if (!currentUser) return;
-
-            const chatHistory = currentUser.messages || [];
-
-            if (chatHistory.length === 0) {
-                container.innerHTML = `<p class="text-slate-500 italic text-center py-4 text-[10px]">Aucun message.</p>`;
+            if (!container) return;
+            container.innerHTML = '';
+            if (currentUser.isAdmin) return;
+            const myMsgs = chats.filter(c => c.userId === currentUser.id).sort((a,b) => a.timestamp - b.timestamp);
+            if (myMsgs.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-xs text-slate-600">Aucun message. Posez votre question ci-dessous.</div>`;
                 return;
             }
-
-            chatHistory.forEach(msg => {
-                const isSystem = msg.text.startsWith('[Système');
-                const isClient = msg.sender === 'client';
-                
-                const bubbleWrapper = document.createElement('div');
-                bubbleWrapper.className = `flex flex-col ${isSystem ? 'items-center my-3' : (isClient ? 'items-end' : 'items-start')}`;
-
-                let bubbleClass = "max-w-[85%] rounded-xl px-3 py-2 text-[11px] leading-relaxed shadow-sm ";
-                if (isSystem) {
-                    bubbleClass += "bg-[#111827] text-slate-500 border border-slate-800 text-center text-[10px] italic py-1 px-2";
-                } else if (isClient) {
-                    bubbleClass += "bg-brand-500 text-white rounded-br-none";
-                } else {
-                    bubbleClass += "bg-slate-800 text-slate-200 rounded-bl-none border border-slate-750";
-                }
-
-                const msgDate = new Date(msg.date);
-                const timeStr = msgDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-                bubbleWrapper.innerHTML = `
-                    <div class="${bubbleClass}">
-                        <p>${msg.text}</p>
-                    </div>
-                    ${!isSystem ? `<span class="text-[9px] text-slate-500 mt-0.5 px-1">${timeStr}</span>` : ''}
-                `;
-
-                container.appendChild(bubbleWrapper);
+            myMsgs.forEach(m => {
+                const bubble = document.createElement('div');
+                bubble.className = `flex flex-col max-w-[80%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                    m.isAdmin 
+                    ? 'bg-dark-800 border border-dark-700 text-slate-300 self-start' 
+                    : 'bg-gradient-to-br from-brand-500 to-brand-600 text-white self-end shadow-md shadow-brand-500/5'
+                }`;
+                bubble.innerHTML = `<span class="font-bold text-[10px] opacity-75 mb-1">${m.userName}</span><p class="whitespace-pre-line">${m.message}</p>`;
+                container.appendChild(bubble);
             });
-
-            // Faire défiler vers le bas
             container.scrollTop = container.scrollHeight;
         }
 
-        // Rendu de l'onglet tchat de la console Administrateur avec indicateurs "En ligne"
         function renderAdminChat() {
-            const listUsersContainer = document.getElementById('admin-chat-users');
-            const messagesContainer = document.getElementById('admin-chat-messages');
-            const chatHeader = document.getElementById('admin-chat-header');
-            const chatForm = document.getElementById('admin-chat-form');
-
-            listUsersContainer.innerHTML = "";
-
-            if (!currentUser || !currentUser.isAdmin) return;
-
-            // 1. Lister tous les clients disponibles (qui ne sont pas des administrateurs purs)
-            const chatClients = Object.values(users).filter(u => u.email !== 'admin@saasify.com');
-
-            if (chatClients.length === 0) {
-                listUsersContainer.innerHTML = `<p class="text-[10px] text-slate-500 italic py-2">Aucun client.</p>`;
+            const container = document.getElementById('admin-chats-container');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!currentUser.isAdmin) return;
+            const clients = users.filter(u => !u.isAdmin);
+            if (clients.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-600 text-center py-4">Aucun client enregistré.</p>`;
                 return;
             }
-
-            chatClients.forEach(client => {
-                const clientMsgs = client.messages || [];
-                const lastMsg = clientMsgs[clientMsgs.length - 1];
-                const lastMsgText = lastMsg ? (lastMsg.text.startsWith('[Système') ? "Mise à jour système" : lastMsg.text) : "Aucun message";
-
-                const isSelected = activeAdminChatUserEmail === client.email;
-
-                const btn = document.createElement('button');
-                btn.className = `w-full text-left p-2 rounded-xl text-xs transition-all flex flex-col gap-0.5 border ${isSelected ? 'bg-brand-500/20 text-brand-200 border-brand-500/30' : 'bg-[#090d16] text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'}`;
-                btn.onclick = () => selectAdminActiveChat(client.email);
-
-                // Ajout de la pastille verte "En ligne" et de sa petite animation de pulsation
-                btn.innerHTML = `
-                    <div class="flex justify-between items-center w-full gap-2">
-                        <span class="font-bold truncate flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse flex-shrink-0" title="En ligne"></span>
-                            <span class="truncate">${client.name}</span>
-                        </span>
-                        ${clientMsgs.length > 0 && clientMsgs[clientMsgs.length - 1].sender === 'client' ? '<span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse flex-shrink-0" title="Nouveau message"></span>' : ''}
-                    </div>
-                    <span class="text-[9px] text-slate-555 truncate w-full">${lastMsgText}</span>
-                `;
-
-                listUsersContainer.appendChild(btn);
-            });
-
-            // 2. Afficher la conversation active
-            if (!activeAdminChatUserEmail) {
-                messagesContainer.innerHTML = `<p class="text-slate-600 text-center italic mt-12">Sélectionnez un client à gauche pour commencer à discuter.</p>`;
-                chatHeader.textContent = "Aucun tchat actif";
-                chatForm.classList.add('hidden');
-                return;
-            }
-
-            const activeClient = users[activeAdminChatUserEmail];
-            if (!activeClient) {
-                activeAdminChatUserEmail = null;
-                renderAdminChat();
-                return;
-            }
-
-            chatHeader.innerHTML = `Discussion avec <strong class="text-white">${activeClient.name}</strong>`;
-            chatForm.classList.remove('hidden');
-
-            messagesContainer.innerHTML = "";
-            const activeHistory = activeClient.messages || [];
-
-            if (activeHistory.length === 0) {
-                messagesContainer.innerHTML = `<p class="text-slate-600 text-center italic mt-12">Aucun message de support échangé.</p>`;
-                return;
-            }
-
-            activeHistory.forEach(msg => {
-                const isSystem = msg.text.startsWith('[Système');
-                const isClient = msg.sender === 'client';
-
-                const bubbleWrapper = document.createElement('div');
-                bubbleWrapper.className = `flex flex-col ${isSystem ? 'items-center my-2' : (isClient ? 'items-start' : 'items-end')}`;
-
-                let bubbleClass = "max-w-[85%] rounded-lg px-2.5 py-1.5 text-[10px] leading-relaxed ";
-                if (isSystem) {
-                    bubbleClass += "bg-[#111827] text-slate-500 border border-slate-800 text-center italic text-[9px] py-1 px-2";
-                } else if (isClient) {
-                    bubbleClass += "bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none";
-                } else {
-                    bubbleClass += "bg-brand-500 text-white font-medium rounded-br-none";
-                }
-
-                const msgDate = new Date(msg.date);
-                const timeStr = msgDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-                bubbleWrapper.innerHTML = `
-                    <div class="${bubbleClass}">
-                        <p>${msg.text}</p>
-                    </div>
-                    ${!isSystem ? `<span class="text-[8px] text-slate-500 mt-0.5 px-1">${timeStr}</span>` : ''}
-                `;
-
-                messagesContainer.appendChild(bubbleWrapper);
-            });
-
-            // Défilement de la zone admin
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        // --- AFFICHAGE RENDU DYNAMIQUE DU CATALOGUE ---
-        function renderServices() {
-            const listContainer = document.getElementById('services-list');
-            listContainer.innerHTML = '';
-
-            const filtered = AVAILABLE_SERVICES.filter(s => {
-                if (currentFilter === 'all') return true;
-                return s.type === currentFilter;
-            });
-
-            if (filtered.length === 0) {
-                listContainer.innerHTML = `<p class="text-slate-500 text-sm italic col-span-2 text-center py-8">Aucun service trouvé dans cette catégorie.</p>`;
-                return;
-            }
-
-            filtered.forEach(service => {
-                const userService = currentUser ? currentUser.services[service.id] : null;
-                const isActive = userService && userService.status === 'active';
-                const coverage = checkCoverage(userService);
-                
-                let statusBadge = '';
-                let actionBtnText = 'Activer';
-                let actionBtnClass = 'bg-brand-500 hover:bg-brand-600 text-white';
-                let infoText = '';
-                let priceDisplay = '';
-
-                // Formater le prix affiché
-                if (service.type === 'devis') {
-                    if (userService && userService.devisAmount && userService.status !== 'devis_demande') {
-                        priceDisplay = `<span class="text-xl font-black text-white">${userService.devisAmount.toFixed(2)} €</span> <span class="text-[10px] text-slate-500 font-medium">/ an (sur devis)</span>`;
-                    } else if (userService && userService.status === 'devis_demande') {
-                        priceDisplay = `<span class="text-sm font-bold text-amber-500">Estimation en cours...</span>`;
-                    } else {
-                        priceDisplay = `<span class="text-sm font-bold text-slate-400 font-medium">Sous Devis</span>`;
-                    }
-                } else {
-                    priceDisplay = `<span class="text-xl font-black text-white">${service.price.toFixed(2)} €</span> <span class="text-[10px] text-slate-500 font-medium">/ ${service.type === 'mensuel' ? 'mois' : 'an'}</span>`;
-                }
-
-                // Gérer les différents statuts et visuels
-                if (isActive) {
-                    statusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Actif
-                    </span>`;
-                    actionBtnText = 'Désactiver';
-                    actionBtnClass = 'bg-rose-950/40 hover:bg-rose-900/40 text-rose-400 border border-rose-500/30';
-                    infoText = `Expire le <strong>${new Date(userService.expiryDate).toLocaleDateString('fr-FR')}</strong>`;
-                    if (userService.clientNotes) {
-                        infoText += `<br><span class="text-slate-500 italic">Projet : "${userService.clientNotes}"</span>`;
-                    }
-                } else if (userService && userService.status === 'devis_demande') {
-                    statusBadge = `<span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse">Évaluation</span>`;
-                    actionBtnText = "En attente...";
-                    actionBtnClass = 'bg-slate-800 text-slate-500 cursor-not-allowed';
-                    infoText = `Demande : <span class="italic text-slate-500">"${userService.clientNotes}"</span>.<br><span class="text-amber-400 font-semibold">Connectez-vous à l'admin pour fixer le prix !</span>`;
-                } else if (userService && userService.status === 'devis_propose') {
-                    statusBadge = `<span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Devis Prêt</span>`;
-                    actionBtnText = 'Accepter & Payer';
-                    actionBtnClass = 'bg-cyan-600 hover:bg-cyan-700 text-white';
-                    infoText = `Demande : <span class="italic text-slate-500">"${userService.clientNotes}"</span>. Devis validé par l'admin !`;
-                } else if (userService && userService.hasPaidOnce) {
-                    statusBadge = `<span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-slate-850 text-slate-400 border border-slate-800">Désactivé</span>`;
-                    
-                    if (coverage.covered) {
-                        actionBtnText = 'Réactiver';
-                        actionBtnClass = 'bg-emerald-600 hover:bg-emerald-700 text-white';
-                        infoText = `<span class="text-emerald-400 font-medium">Réactivation gratuite !</span> (Couverture jusqu'au ${new Date(userService.expiryDate).toLocaleDateString('fr-FR')})`;
-                    } else {
-                        actionBtnText = 'Réactiver';
-                        actionBtnClass = 'bg-slate-800 hover:bg-slate-700 text-white';
-                        infoText = `<span class="text-slate-550">Expiré le ${new Date(userService.expiryDate).toLocaleDateString('fr-FR')}. Nouveau paiement requis.</span>`;
-                    }
-                } else {
-                    statusBadge = `<span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">Nouveau</span>`;
-                    if (service.type === 'devis') {
-                        actionBtnText = 'Demander devis';
-                        actionBtnClass = 'bg-gradient-to-r from-brand-500 to-fluid-500 hover:from-brand-600 hover:to-fluid-600 text-white';
-                        infoText = `Décrivez votre projet pour obtenir votre devis sur-mesure.`;
-                    } else {
-                        infoText = `Premier paiement de <strong>${service.price.toFixed(2)} €</strong> pour activer.`;
-                    }
-                }
-
+            clients.forEach(c => {
+                const clientMsgs = chats.filter(m => m.userId === c.id).sort((a,b) => a.timestamp - b.timestamp);
+                const chatBoxId = `admin-chat-messages-${c.id}`;
                 const card = document.createElement('div');
-                card.className = `bg-dark-900 rounded-2xl border ${isActive ? 'border-brand-500/40 shadow-xl shadow-brand-500/5' : 'border-slate-850'} p-5 transition-all flex flex-col justify-between`;
-                
-                card.innerHTML = `
-                    <div>
-                        <!-- Header de carte -->
-                        <div class="flex justify-between items-start gap-4 mb-3">
-                            <div class="w-9 h-9 rounded-xl ${service.color} flex items-center justify-center flex-shrink-0 border">
-                                <i data-lucide="${service.icon}" class="w-4.5 h-4.5"></i>
-                            </div>
-                            ${statusBadge}
-                        </div>
-
-                        <!-- Titre & Desc -->
-                        <h4 class="text-sm font-bold text-white">${service.name}</h4>
-                        <p class="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">${service.description}</p>
-                        
-                        <!-- Prix / Type -->
-                        <div class="mt-3 flex items-baseline gap-1.5">
-                            ${priceDisplay}
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="mt-4 pt-3 border-t border-slate-850 flex flex-col gap-2">
-                        <div class="text-[10px] text-slate-500 leading-relaxed">
-                            ${infoText}
-                        </div>
-                        <button onclick="${userService && userService.status === 'devis_demande' ? '' : `toggleService('${service.id}')`}" class="w-full py-1.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${actionBtnClass}">
-                            <span>${actionBtnText}</span>
-                        </button>
-                    </div>
-                `;
-
-                listContainer.appendChild(card);
-            });
-
-            lucide.createIcons();
-        }
-
-        // --- RENDU DE LA CONSOLE ADMINISTRATEUR GLOBALE SÉCURISÉE ---
-        function renderAdminConsole() {
-            const adminContainer = document.getElementById('admin-devis-list');
-            adminContainer.innerHTML = '';
-
-            if (!currentUser || !currentUser.isAdmin) return;
-
-            let hasPendingRequests = false;
-
-            // Parcourir TOUS les comptes utilisateurs pour chercher des demandes en attente
-            Object.values(users).forEach(user => {
-                if (user.services) {
-                    AVAILABLE_SERVICES.forEach(service => {
-                        if (service.type === 'devis') {
-                            const userService = user.services[service.id];
-                            if (userService && userService.status === 'devis_demande') {
-                                hasPendingRequests = true;
-
-                                const item = document.createElement('div');
-                                item.className = "p-4 bg-[#111827] rounded-xl border border-slate-800 space-y-3";
-                                
-                                // Générer un ID sûr sans caractères d'email problématiques
-                                const inputIdSafe = `admin-price-input-${user.email.replace(/[@.]/g, '_')}-${service.id}`;
-
-                                item.innerHTML = `
-                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-slate-850 pb-2">
-                                        <div>
-                                            <span class="text-[9px] font-semibold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 animate-pulse">Demande en attente</span>
-                                            <h4 class="text-xs font-bold text-white mt-1">${service.name}</h4>
-                                        </div>
-                                        <div class="text-[10px] text-slate-400">Client : <strong class="text-slate-200">${user.name}</strong> (${user.email})</div>
-                                    </div>
-                                    <div class="bg-[#090d16] p-2 rounded-lg border border-slate-850">
-                                        <span class="text-[8px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">📝 Description :</span>
-                                        <p class="text-xs text-slate-300 italic leading-relaxed">"${userService.clientNotes}"</p>
-                                    </div>
-                                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
-                                        <div class="flex items-center gap-2 max-w-xs w-full sm:w-auto">
-                                            <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider flex-shrink-0">Prix (€) :</span>
-                                            <div class="relative flex-1">
-                                                <input type="number" id="${inputIdSafe}" placeholder="Ex: 1500" class="w-full bg-[#090d16] border border-slate-850 rounded-lg px-2 py-1 text-xs text-white font-bold focus:outline-none focus:ring-1 focus:ring-brand-500">
-                                            </div>
-                                        </div>
-                                        <button onclick="sendDevisPriceFromAdmin('${user.email}', '${service.id}')" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[10px] rounded-lg shadow-md transition-all flex items-center gap-1">
-                                            <span>Valider</span>
-                                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                                        </button>
-                                    </div>
-                                `;
-
-                                adminContainer.appendChild(item);
-                            }
-                        }
+                card.className = "bg-dark-900 border border-dark-800 rounded-xl p-4 flex flex-col justify-between h-[340px]";
+                let msgsHtml = '';
+                if (clientMsgs.length === 0) {
+                    msgsHtml = `<div class="text-center text-[11px] text-slate-600 my-auto">Historique vierge avec ce client.</div>`;
+                } else {
+                    clientMsgs.forEach(m => {
+                        msgsHtml += `<div class="flex flex-col max-w-[85%] rounded-xl p-2.5 text-[11px] leading-snug ${
+                            m.isAdmin 
+                            ? 'bg-brand-900/30 text-brand-300 border border-brand-800/30 self-end' 
+                            : 'bg-dark-800 text-slate-300 border border-dark-700 self-start'
+                        }"><span class="font-bold text-[9px] opacity-60 mb-0.5">${m.userName}</span><p class="whitespace-pre-line">${m.message}</p></div>`;
                     });
                 }
-            });
-
-            if (!hasPendingRequests) {
-                adminContainer.innerHTML = `
-                    <div class="text-center py-6 text-slate-600 text-xs italic border border-dashed border-slate-800 rounded-xl">
-                        Aucun devis en attente.
+                card.innerHTML = `
+                    <div class="border-b border-dark-800 pb-2 mb-2 flex items-center justify-between">
+                        <span class="font-bold text-xs text-slate-200">${c.name}</span>
+                        <span class="text-[10px] text-slate-500">${c.email}</span>
                     </div>
-                `;
-            }
+                    <div id="${chatBoxId}" class="flex flex-col gap-2 overflow-y-auto flex-1 pr-1 mb-3 scrollbar-thin">
+                        ${msgsHtml}
+                    </div>
+                    <div class="flex gap-2">
+                        <textarea id="admin-chat-input-${c.id}" rows="1" placeholder="Répondre..." class="flex-1 text-xs bg-dark-950 border border-dark-800 rounded-xl px-3 py-2 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brand-500 resize-none"></textarea>
+                        <button onclick="sendAdminMessage('${c.id}')" class="bg-dark-800 hover:bg-dark-700 border border-dark-700 text-slate-200 px-3 rounded-xl text-xs font-semibold transition">Envoyer</button>
+                    </div>`;
+                container.appendChild(card);
+                const box = document.getElementById(chatBoxId);
+                if (box) box.scrollTop = box.scrollHeight;
+            });
+        }
 
-            lucide.createIcons();
+        function renderAdminConsole() {
+            const container = document.getElementById('admin-console-table');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!currentUser.isAdmin) return;
+            const clients = users.filter(u => !u.isAdmin);
+            if (clients.length === 0) {
+                container.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-xs text-slate-600">Aucun client.</td></tr>`;
+                return;
+            }
+            clients.forEach(c => {
+                SERVICES_DATA.forEach(service => {
+                    const userSrv = c.services[service.id];
+                    const coverage = checkCoverage(userSrv);
+                    let actionHtml = `<span class="text-slate-600 text-[11px] font-medium">— Aucun contrôle requis</span>`;
+                    if (userSrv && userSrv.status === 'devis_demande') {
+                        actionHtml = `
+                            <div class="flex items-center gap-2 max-w-xs">
+                                <div class="relative rounded-xl shadow-sm flex-1">
+                                    <input type="number" id="devis-amount-${c.id}-${service.id}" placeholder="Montant" class="w-full text-xs bg-dark-950 border border-dark-800 rounded-xl pl-3 pr-7 py-1.5 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brand-500">
+                                    <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none"><span class="text-slate-500 text-[11px]">€</span></div>
+                                </div>
+                                <button onclick="proposerDevis('${c.id}', '${service.id}')" class="text-[11px] font-bold py-1.5 px-3 rounded-xl bg-brand-500 text-white hover:bg-brand-600 transition shadow-sm">Proposer</button>
+                            </div>`;
+                    } else if (userSrv && userSrv.status === 'devis_propose') {
+                        actionHtml = `<span class="text-indigo-400 text-[11px] font-semibold bg-indigo-950/30 px-2 py-1 rounded-lg border border-indigo-900/40">Offre émise (${userSrv.devisAmount} €)</span>`;
+                    } else if (userSrv && userSrv.status === 'active' && service.type === 'devis') {
+                        actionHtml = `<span class="text-emerald-400 text-[11px] font-semibold bg-emerald-950/30 px-2 py-1 rounded-lg border border-emerald-900/40">Signé & Payé (${userSrv.devisAmount} €)</span>`;
+                    }
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-dark-800 hover:bg-dark-900/30 transition";
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap"><div class="text-xs font-semibold text-slate-200">${c.name}</div><div class="text-[10px] text-slate-500">${c.email}</div></td>
+                        <td class="px-6 py-4 whitespace-nowrap"><div class="text-xs font-medium text-slate-300">${service.name}</div><div class="text-[10px] text-slate-500 capitalize">${service.type}</div></td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase ${coverage.color}">${coverage.label}</span></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-xs">${actionHtml}</td>`;
+                    container.appendChild(tr);
+                });
+            });
         }
 
         function renderPaymentHistory() {
-            const listContainer = document.getElementById('payments-history-list');
-            listContainer.innerHTML = '';
-
-            const history = currentUser ? currentUser.paymentHistory : [];
-
-            if (!history || history.length === 0) {
-                listContainer.innerHTML = `<p class="text-slate-550 text-xs italic text-center py-4">Aucune transaction.</p>`;
+            const container = document.getElementById('payment-history-rows');
+            if (!container) return;
+            container.innerHTML = '';
+            const filteredPayments = currentUser.isAdmin ? payments : payments.filter(p => p.userId === currentUser.id);
+            const sortedPayments = filteredPayments.sort((a,b) => b.id.localeCompare(a.id));
+            if (sortedPayments.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-xs text-slate-600">Aucune transaction enregistrée.</td></tr>`;
                 return;
             }
-
-            history.forEach(tx => {
-                const dateObj = new Date(tx.date);
-                const dateFormatted = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-                
-                const isFree = tx.amount === 0;
-
-                const item = document.createElement('div');
-                item.className = "flex items-center justify-between p-2 bg-dark-950 rounded-lg border border-slate-850";
-                
-                item.innerHTML = `
-                    <div class="min-w-0 flex-1 pr-2">
-                        <p class="text-xs font-bold text-white truncate">${tx.serviceName}</p>
-                        <p class="text-[9px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <span>${dateFormatted}</span>
-                            <span>•</span>
-                            <span class="truncate">${tx.mode}</span>
-                        </p>
-                    </div>
-                    <div class="text-right flex-shrink-0">
-                        <p class="text-xs font-extrabold ${isFree ? 'text-emerald-400' : 'text-slate-200'}">
-                            ${isFree ? 'Gratuit' : `-${tx.amount.toFixed(2)} €`}
-                        </p>
-                    </div>
-                `;
-
-                listContainer.appendChild(item);
+            sortedPayments.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-dark-800 hover:bg-dark-900/30 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-3.5 whitespace-nowrap text-xs font-mono text-slate-400">${p.id}</td>
+                    ${currentUser.isAdmin ? `<td class="px-6 py-3.5 whitespace-nowrap text-xs font-semibold text-slate-200">${p.userName}</td>` : ''}
+                    <td class="px-6 py-3.5 whitespace-nowrap text-xs font-medium text-slate-300">${p.serviceName}</td>
+                    <td class="px-6 py-3.5 whitespace-nowrap text-xs font-bold text-slate-200">${p.amount.toFixed(2)} €</td>
+                    <td class="px-6 py-3.5 whitespace-nowrap text-xs text-slate-400">${p.date}</td>
+                    <td class="px-6 py-3.5 whitespace-nowrap"><span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-900/50">✓ ${p.status}</span></td>`;
+                container.appendChild(tr);
             });
         }
 
-        // --- NOUVEAU SYSTÈME DE VIDAGE FILTRÉ PAR DATE ---
-        function clearPaymentHistory() {
+        function updateUI() {
             if (!currentUser) return;
             
-            const initialLength = currentUser.paymentHistory ? currentUser.paymentHistory.length : 0;
-            if (initialLength === 0) {
-                showNotification("L'historique est déjà vide.", "info");
-                return;
-            }
-
-            // Calcul de la date d'il y a 1 an par rapport à la date virtuelle de simulation
-            const oneYearAgo = new Date(simulatedDate);
-            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-
-            // Filtrer pour ne garder QUE les paiements de moins de 1 an
-            currentUser.paymentHistory = currentUser.paymentHistory.filter(tx => {
-                const txDate = new Date(tx.date);
-                return txDate >= oneYearAgo; 
-            });
-
-            const deletedCount = initialLength - currentUser.paymentHistory.length;
+            // Masquer/Afficher les modules selon le profil
+            document.getElementById('client-chat-section').classList.toggle('hidden', currentUser.isAdmin);
+            document.getElementById('admin-chats-section').classList.toggle('hidden', !currentUser.isAdmin);
             
-            // Sauvegarde des modifications
-            users[currentUser.email] = currentUser;
-            saveUsers();
-            saveSession();
+            let activeCount = 0, cancelledCount = 0;
+            let monthlyEst = 0, annualEst = 0, devisEst = 0;
             
-            if (deletedCount > 0) {
-                showNotification(`${deletedCount} transaction(s) de plus d'un an nettoyée(s).`, "success");
-            } else {
-                showNotification("Aucune transaction n'a plus de 1 an.", "warning");
-            }
+            // Calcul global des statistiques basé sur la liste Firebase globale ou locale
+            const userTargetList = currentUser.isAdmin ? users.filter(u => !u.isAdmin) : [currentUser];
             
-            updateDashboard();
-        }
-
-        // --- STATISTIQUES DU TABLEAU DE BORD ---
-        function updateDashboard() {
-            if (!currentUser) return;
-
-            document.getElementById('dashboard-user-name').textContent = currentUser.name;
-
-            // Affichage de la console d'administration sécurisée uniquement si isAdmin est vrai
-            const adminConsoleSection = document.getElementById('admin-console-section');
-            if (currentUser.isAdmin) {
-                adminConsoleSection.classList.remove('hidden');
-            } else {
-                adminConsoleSection.classList.add('hidden');
-            }
-
-            let activeCount = 0;
-            let cancelledCount = 0;
-            let estimatedMonthlyCost = 0;
-            let estimatedAnnualCost = 0;
-            let estimatedDevisCost = 0;
-
-            AVAILABLE_SERVICES.forEach(service => {
-                const userService = currentUser.services[service.id];
-                if (userService) {
-                    if (userService.status === 'active') {
+            userTargetList.forEach(u => {
+                SERVICES_DATA.forEach(service => {
+                    const userSrv = u.services[service.id];
+                    const coverage = checkCoverage(userSrv);
+                    if (userSrv && userSrv.status === 'active' && (service.type === 'devis' ? true : coverage.covered)) {
                         activeCount++;
-                        
-                        if (service.type === 'mensuel') {
-                            estimatedMonthlyCost += service.price;
-                        } else if (service.type === 'annuel') {
-                            estimatedAnnualCost += service.price;
-                        } else if (service.type === 'devis' && userService.devisAmount) {
-                            estimatedDevisCost += userService.devisAmount;
-                        }
-                    } else if (userService.hasPaidOnce) {
+                        if (service.type === 'mensuel') monthlyEst += service.price;
+                        if (service.type === 'annuel') annualEst += service.price;
+                        if (service.type === 'devis' && userSrv.devisAmount) devisEst += userSrv.devisAmount;
+                    } else if (userSrv && (userSrv.status === 'inactive' || userSrv.status === 'devis_demande' || userSrv.status === 'devis_propose')) {
                         cancelledCount++;
                     }
-                }
+                });
             });
 
-            // Afficher les statistiques sur vos elements d'origine
             document.getElementById('stat-active-count').textContent = activeCount;
+            document.getElementById('stat-total-cost').textContent = `${monthlyEst.toFixed(2)} €`;
+            document.getElementById('stat-annual-cost').textContent = `${annualEst.toFixed(2)} €`;
+            document.getElementById('stat-devis-cost').textContent = `${devisEst.toFixed(2)} €`;
             document.getElementById('stat-cancelled-count').textContent = cancelledCount;
-            document.getElementById('stat-total-cost').textContent = `${estimatedMonthlyCost.toFixed(2)} €/m`;
-            document.getElementById('stat-annual-cost').textContent = `${estimatedAnnualCost.toFixed(2)} €/an`;
-            document.getElementById('stat-devis-cost').textContent = `${estimatedDevisCost.toFixed(2)} €`;
-
-            // Rendu des listes et de la console d'administration
+            
             renderServices();
-            renderAdminConsole();
-            renderPaymentHistory();
             renderClientChat();
             renderAdminChat();
+            renderAdminConsole();
+            renderPaymentHistory();
+            
+            const isConsoleVisible = currentUser.isAdmin;
+            document.getElementById('admin-console-section').classList.toggle('hidden', !isConsoleVisible);
+            
+            // Ajustement dynamique du tableau de paiements (colonne Client en Admin)
+            const clientHeader = document.getElementById('th-payment-client');
+            if (clientHeader) clientHeader.classList.toggle('hidden', !currentUser.isAdmin);
         }
+
+        // DÉMARRAGE DE L'APPLICATION
+        checkAndSeedDatabase();
     </script>
 </body>
 </html>
