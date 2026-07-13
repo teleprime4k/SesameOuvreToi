@@ -53,7 +53,7 @@
         import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, onSnapshot, addDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // ==========================================
-        // 1. CONFIGURATION FIREBASE (Vos identifiants)
+        // 1. CONFIGURATION FIREBASE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBs4p7kaG0d6GMuMRiThl1W7_ZTncLCBCo",
@@ -93,6 +93,8 @@
         // ==========================================
         window.appState = {
             user: null,
+            isAdmin: false,          
+            simulateAdmin: false,    
             loadingAuth: true,
             isLoginMode: true,
             authLoading: false,
@@ -100,12 +102,21 @@
             activeTab: 'dashboard',
             profile: null,
             catalogFilter: 'all',
-            quotes: { nodes: 10, storage: 500, sla: 'standard' }
+            quotes: { nodes: 10, storage: 500, sla: 'standard' },
+            adminSelectedClient: null,
+            allProfiles: [],
+            allQuotes: [],
+            allMessages: [],
+            firestoreBlocked: false // Détecteur intelligent de blocage de permissions
         };
 
         let unsubProfile = null;
         let unsubHistory = null;
         let unsubChat = null;
+        
+        let unsubAdminProfiles = null;
+        let unsubAdminQuotes = null;
+        let unsubAdminMessages = null;
 
         // Fonction de Notification Toast
         window.showToast = (msg, type = 'success') => {
@@ -126,47 +137,116 @@
             }, 3000);
         };
 
+        // Gérer de façon globale l'erreur de permissions
+        function handlePermissionError(err) {
+            if (err && (err.code === 'permission-denied' || err.message.includes('permission'))) {
+                window.appState.firestoreBlocked = true;
+                renderApp();
+            }
+        }
+
         // ==========================================
         // 4. INITIALISATION & LISTENERS
         // ==========================================
         onAuthStateChanged(auth, async (currentUser) => {
             window.appState.user = currentUser;
+            window.appState.firestoreBlocked = false; // Réinitialiser au changement d'état
             
             if (currentUser) {
-                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'userData', 'profile');
-                const snap = await getDoc(profileRef);
+                window.appState.isAdmin = currentUser.email.toLowerCase().includes('admin');
                 
-                if (!snap.exists()) {
-                    await setDoc(profileRef, {
-                        email: currentUser.email,
-                        status: 'inactive',
-                        subEnd: null,
-                        usageTotal: 0,
-                        createdAt: Date.now()
+                try {
+                    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', currentUser.uid);
+                    const snap = await getDoc(profileRef);
+                    
+                    if (!snap.exists()) {
+                        await setDoc(profileRef, {
+                            email: currentUser.email,
+                            status: 'inactive',
+                            subEnd: null,
+                            usageTotal: 0,
+                            createdAt: Date.now()
+                        });
+                    }
+
+                    if(unsubProfile) unsubProfile();
+                    unsubProfile = onSnapshot(profileRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            if (data.subEnd && data.subEnd < Date.now() && data.status === 'active') {
+                                updateDoc(profileRef, { status: 'expired' }).catch(handlePermissionError);
+                            } else {
+                                window.appState.profile = data;
+                                if(['dashboard', 'simulator'].includes(window.appState.activeTab)) renderActiveTab();
+                            }
+                        }
+                    }, (err) => {
+                        console.error("Erreur de synchronisation du profil:", err);
+                        handlePermissionError(err);
                     });
+
+                    setupAdminListeners();
+                } catch (err) {
+                    console.error("Erreur lors de l'accès initial Firestore:", err);
+                    handlePermissionError(err);
                 }
 
-                // Écouteur en temps réel sur le profil
-                if(unsubProfile) unsubProfile();
-                unsubProfile = onSnapshot(profileRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        if (data.subEnd && data.subEnd < Date.now() && data.status === 'active') {
-                            updateDoc(profileRef, { status: 'expired' });
-                        } else {
-                            window.appState.profile = data;
-                            if(['dashboard', 'simulator'].includes(window.appState.activeTab)) renderActiveTab();
-                        }
-                    }
-                });
             } else {
                 if(unsubProfile) unsubProfile();
+                teardownAdminListeners();
                 window.appState.profile = null;
+                window.appState.isAdmin = false;
+                window.appState.simulateAdmin = false;
             }
             
             window.appState.loadingAuth = false;
             renderApp();
         });
+
+        function setupAdminListeners() {
+            teardownAdminListeners();
+
+            try {
+                const profilesCol = collection(db, 'artifacts', appId, 'public', 'data', 'profiles');
+                unsubAdminProfiles = onSnapshot(profilesCol, (snap) => {
+                    window.appState.allProfiles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if (window.appState.activeTab === 'admin') renderActiveTab();
+                }, err => {
+                    console.log("Profils admin non accessibles (droits limités):", err);
+                    handlePermissionError(err);
+                });
+
+                const quotesCol = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
+                unsubAdminQuotes = onSnapshot(quotesCol, (snap) => {
+                    const quotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    quotes.sort((a,b) => b.date - a.date);
+                    window.appState.allQuotes = quotes;
+                    if (window.appState.activeTab === 'admin') renderActiveTab();
+                }, err => {
+                    console.log("Devis admin non accessibles (droits limités):", err);
+                    handlePermissionError(err);
+                });
+
+                const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                unsubAdminMessages = onSnapshot(messagesCol, (snap) => {
+                    const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    msgs.sort((a, b) => a.timestamp - b.timestamp);
+                    window.appState.allMessages = msgs;
+                    if (window.appState.activeTab === 'admin') renderActiveTab();
+                }, err => {
+                    console.log("Messages admin non accessibles (droits limités):", err);
+                    handlePermissionError(err);
+                });
+            } catch(err) {
+                handlePermissionError(err);
+            }
+        }
+
+        function teardownAdminListeners() {
+            if(unsubAdminProfiles) { unsubAdminProfiles(); unsubAdminProfiles = null; }
+            if(unsubAdminQuotes) { unsubAdminQuotes(); unsubAdminQuotes = null; }
+            if(unsubAdminMessages) { unsubAdminMessages(); unsubAdminMessages = null; }
+        }
 
         // ==========================================
         // 5. RENDU DE L'INTERFACE UI
@@ -177,6 +257,9 @@
             
             if (window.appState.loadingAuth) {
                 root.innerHTML = `<div class="min-h-screen flex items-center justify-center text-cyan-500"><i data-lucide="zap" class="animate-pulse w-12 h-12"></i></div>`;
+            } else if (window.appState.firestoreBlocked) {
+                // Rendu de l'écran de résolution de permissions
+                root.innerHTML = getPermissionDiagnosticScreenHTML();
             } else if (!window.appState.user) {
                 root.innerHTML = getAuthScreenHTML();
             } else {
@@ -184,6 +267,86 @@
                 renderActiveTab();
             }
             lucide.createIcons();
+        }
+
+        // --- ÉCRAN DIAGNOSTIC DE PERMISSIONS FIREBASE (SÉCURISÉ) ---
+        window.retryFirestoreConnection = () => {
+            window.appState.firestoreBlocked = false;
+            window.appState.loadingAuth = true;
+            renderApp();
+            // Déclenche une reconnexion
+            const user = auth.currentUser;
+            if (user) {
+                setupAdminListeners();
+                setTimeout(() => {
+                    window.appState.loadingAuth = false;
+                    renderApp();
+                }, 1000);
+            } else {
+                window.appState.loadingAuth = false;
+                renderApp();
+            }
+        };
+
+        function getPermissionDiagnosticScreenHTML() {
+            return `
+            <div class="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 font-mono relative overflow-y-auto">
+              <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/10 via-slate-950 to-slate-950"></div>
+              
+              <div class="z-10 w-full max-w-2xl bg-slate-900/90 backdrop-blur-xl p-8 rounded-2xl border border-red-500/40 shadow-[0_0_40px_rgba(239,68,68,0.15)] relative overflow-hidden my-8">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+                
+                <div class="flex items-center gap-4 mb-6 border-b border-slate-800 pb-4">
+                  <div class="p-3 bg-red-950/50 rounded-xl border border-red-500/50 text-red-500 animate-pulse">
+                    <i data-lucide="shield-alert" class="w-8 h-8"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-xl font-bold text-white uppercase tracking-widest">Alerte Sécurité Firestore</h2>
+                    <p class="text-xs text-red-400">Missing or insufficient permissions (Permission Refusée)</p>
+                  </div>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-300">
+                  <p>Votre application s'est connectée avec succès à votre projet Firebase, mais **Cloud Firestore bloque l'accès** en lecture/écriture car les règles de sécurité de votre base de données sont actuellement verrouillées.</p>
+                  
+                  <div class="p-4 bg-slate-950 rounded-lg border border-slate-800">
+                    <h3 class="text-xs uppercase font-bold text-yellow-500 mb-2 flex items-center gap-2">
+                      <i data-lucide="help-circle" class="w-4 h-4"></i> Comment résoudre cela en 30 secondes :
+                    </h3>
+                    <ol class="list-decimal list-inside space-y-2 text-xs text-slate-400">
+                      <li>Rendez-vous sur votre <a href="https://console.firebase.google.com/project/sesameouvretoi-13/firestore/rules" target="_blank" class="text-cyan-400 hover:underline">Console Firebase SésameOuvreToi</a>.</li>
+                      <li>Cliquez sur l'onglet <strong class="text-slate-200">Règles (Rules)</strong> à côté de l'onglet Données.</li>
+                      <li>Copiez et collez le bloc de règles sécurisées ci-dessous.</li>
+                      <li>Cliquez sur le bouton bleu <strong class="text-slate-200">Publier (Publish)</strong> en haut à droite.</li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <span class="block text-xs uppercase font-bold text-slate-400 mb-1">Code des règles à copier-coller :</span>
+                    <pre class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs text-emerald-400 overflow-x-auto font-mono">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Autorise la lecture/écriture sécurisée pour les utilisateurs connectés
+    match /artifacts/sesameouvretoi/public/data/{collectionName}/{documentId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</pre>
+                  </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-slate-800 flex flex-col sm:flex-row gap-4">
+                  <button onclick="window.retryFirestoreConnection()" 
+                    class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-6 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all uppercase tracking-wider text-xs flex items-center justify-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> J'ai publié mes règles, tester la connexion
+                  </button>
+                  <button onclick="window.handleLogout()" 
+                    class="bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 px-6 py-3 rounded-lg text-xs uppercase tracking-wider transition-colors">
+                    Déconnexion
+                  </button>
+                </div>
+              </div>
+            </div>`;
         }
 
         // --- AUTHENTIFICATION ---
@@ -260,7 +423,7 @@
                 
                 <div class="mt-6 text-center">
                   <button type="button" onclick="window.toggleAuthMode()" class="text-cyan-500/70 hover:text-cyan-400 text-xs transition-colors">
-                    ${isLoginMode ? "Demander une nouvelle accréditation ?" : "Déjà accrédité ? Établir la connexion."}
+                    ${isLoginMode ? "Créer un nouveau compte administrateur/client" : "Déjà un compte ? Établir la connexion."}
                   </button>
                 </div>
               </div>
@@ -269,9 +432,21 @@
 
         // --- EN-TÊTE ET NAVIGATION DU DASHBOARD ---
         window.handleLogout = () => signOut(auth);
+        
+        window.toggleSimulateAdmin = () => {
+            window.appState.simulateAdmin = !window.appState.simulateAdmin;
+            window.showToast(window.appState.simulateAdmin ? "Console Admin activée." : "Retour au mode client standard.");
+            
+            if(window.appState.simulateAdmin) {
+                window.appState.activeTab = 'admin';
+            } else {
+                window.appState.activeTab = 'dashboard';
+            }
+            renderApp();
+        };
+
         window.setActiveTab = (tabId) => {
             window.appState.activeTab = tabId;
-            // Nettoyage des abonnements temps réel obsolètes
             if(unsubHistory && tabId !== 'history') { unsubHistory(); unsubHistory = null; }
             if(unsubChat && tabId !== 'chat') { unsubChat(); unsubChat = null; }
             
@@ -279,9 +454,15 @@
         };
 
         function getMainDashboardHTML() {
-            const { user, activeTab } = window.appState;
+            const { user, activeTab, isAdmin, simulateAdmin } = window.appState;
+            const hasAdminPrivilege = isAdmin || simulateAdmin;
             
-            let tabsHTML = TABS.map(tab => `
+            let visibleTabs = [...TABS];
+            if (hasAdminPrivilege) {
+                visibleTabs = [{ id: 'admin', label: 'Console Admin', icon: 'shield' }, ...TABS];
+            }
+
+            let tabsHTML = visibleTabs.map(tab => `
                 <button onclick="window.setActiveTab('${tab.id}')"
                   class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium ${
                     activeTab === tab.id 
@@ -304,7 +485,7 @@
                   </div>
                   <div>
                     <h1 class="text-sm font-bold text-white tracking-widest uppercase">Sésame</h1>
-                    <p class="text-[10px] text-cyan-500">v2.5 // Connecté</p>
+                    <p class="text-[10px] text-cyan-500">${hasAdminPrivilege ? 'CONSOLE ROOT' : 'CLIENT LINK'}</p>
                   </div>
                 </div>
                 
@@ -312,8 +493,18 @@
                   ${tabsHTML}
                 </nav>
                 
-                <div class="p-4 border-t border-slate-800">
-                  <div class="flex items-center gap-3 px-4 py-3 bg-slate-950 rounded-lg border border-slate-800 mb-4 overflow-hidden">
+                <div class="p-4 border-t border-slate-800 space-y-4">
+                  <!-- Interrupteur de Simulation Admin -->
+                  <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] uppercase font-bold text-slate-500">Simulateur Admin</span>
+                        <button onclick="window.toggleSimulateAdmin()" class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${simulateAdmin ? 'bg-cyan-600' : 'bg-slate-800'}">
+                            <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${simulateAdmin ? 'translate-x-4' : 'translate-x-0'}"></span>
+                        </button>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3 px-4 py-3 bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
                     <i data-lucide="user" class="w-4 h-4 text-slate-500 shrink-0"></i>
                     <div class="text-xs truncate text-slate-400">${user.email}</div>
                   </div>
@@ -339,7 +530,8 @@
 
             const { activeTab } = window.appState;
             
-            if (activeTab === 'dashboard') renderDashboardTab(container);
+            if (activeTab === 'admin') renderAdminTab(container);
+            else if (activeTab === 'dashboard') renderDashboardTab(container);
             else if (activeTab === 'catalog') renderCatalogTab(container);
             else if (activeTab === 'quotes') renderQuotesTab(container);
             else if (activeTab === 'history') renderHistoryTab(container);
@@ -445,9 +637,9 @@
             }
             
             try {
-                // Créer transaction
-                const txRef = collection(db, 'artifacts', appId, 'users', window.appState.user.uid, 'transactions');
+                const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
                 await addDoc(txRef, {
+                    userId: window.appState.user.uid,
                     type: 'subscription',
                     offerId: offer.id,
                     offerName: offer.name,
@@ -456,8 +648,7 @@
                     status: 'completed'
                 });
 
-                // Mettre à jour profil
-                const profileRef = doc(db, 'artifacts', appId, 'users', window.appState.user.uid, 'userData', 'profile');
+                const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', window.appState.user.uid);
                 const docSnap = await getDoc(profileRef);
                 let currentEnd = docSnap.exists() && docSnap.data().subEnd && docSnap.data().subEnd > Date.now() 
                                  ? docSnap.data().subEnd : Date.now();
@@ -472,6 +663,7 @@
                 window.showToast(`Séquence validée. Module [${offer.name}] activé.`);
             } catch (err) {
                 console.error(err);
+                handlePermissionError(err);
                 window.showToast("Erreur de communication lors de la commande.", "error");
             } finally {
                 if(window.appState.activeTab === 'catalog') renderActiveTab();
@@ -568,8 +760,10 @@
             lucide.createIcons({root: btn});
 
             try {
-                const quoteRef = collection(db, 'artifacts', appId, 'users', window.appState.user.uid, 'quotes');
+                const quoteRef = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
                 await addDoc(quoteRef, {
+                    userId: window.appState.user.uid,
+                    userEmail: window.appState.user.email,
                     nodes: state.nodes,
                     storage: state.storage,
                     sla: state.sla,
@@ -588,6 +782,7 @@
                 btn.disabled = false;
                 btn.className = "px-8 py-3 rounded-lg font-bold uppercase tracking-wide transition-all shadow-[0_0_15px_rgba(8,145,178,0.2)] bg-cyan-600 hover:bg-cyan-500 text-white";
                 btn.innerText = 'Soumettre aux Architectes';
+                handlePermissionError(e);
                 window.showToast("Erreur lors de la transmission.", "error");
             }
         };
@@ -596,6 +791,33 @@
             const state = window.appState.quotes;
             const slaMultiplier = state.sla === 'standard' ? 1 : state.sla === 'priority' ? 1.5 : 2.5;
             const estimatedPrice = Math.floor(((state.nodes * 2.5) + (state.storage * 0.05)) * slaMultiplier);
+
+            const userQuotes = window.appState.allQuotes.filter(q => q.userId === window.appState.user.uid);
+
+            let quotesStatusHTML = '';
+            if (userQuotes.length > 0) {
+                quotesStatusHTML = `
+                <div class="mt-8 border-t border-slate-800 pt-6">
+                    <h3 class="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono">Suivi de vos demandes</h3>
+                    <div class="space-y-3">
+                        ${userQuotes.map(q => {
+                            const badgeColor = q.status === 'approved' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-500/30' : q.status === 'rejected' ? 'bg-red-950/40 text-red-400 border-red-500/30' : 'bg-yellow-950/40 text-yellow-400 border-yellow-500/30';
+                            const statusLabel = q.status === 'approved' ? 'Approuvé' : q.status === 'rejected' ? 'Rejeté' : 'En attente';
+                            return `
+                            <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs text-slate-500">${new Date(q.date).toLocaleString()}</p>
+                                    <p class="text-sm font-medium text-slate-200">${q.nodes} Noeuds | ${q.storage} GB | SLA ${q.sla.toUpperCase()}</p>
+                                    <p class="text-sm text-cyan-400 font-mono">${q.estimatedPrice}€/mois</p>
+                                </div>
+                                <span class="px-3 py-1 border rounded-lg text-xs uppercase font-bold ${badgeColor}">
+                                    ${statusLabel}
+                                </span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }
 
             container.innerHTML = `
             <div class="space-y-6 max-w-3xl animate-fadeIn">
@@ -646,6 +868,8 @@
                     Soumettre aux Architectes
                   </button>
                 </div>
+
+                ${quotesStatusHTML}
               </div>
             </div>`;
         }
@@ -664,16 +888,17 @@
             </div>`;
 
             if(unsubHistory) unsubHistory();
-            const txRef = collection(db, 'artifacts', appId, 'users', window.appState.user.uid, 'transactions');
+            const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
             unsubHistory = onSnapshot(txRef, (snapshot) => {
-                const txs = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-                txs.sort((a, b) => b.date - a.date); // Tri en mémoire (Règle 2)
+                const allTxs = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                const txs = allTxs.filter(t => t.userId === window.appState.user.uid);
+                txs.sort((a, b) => b.date - a.date);
                 
                 const tableCont = document.getElementById('history-content');
                 if(!tableCont) return;
 
                 if (txs.length === 0) {
-                    tableCont.innerHTML = `<div class="p-8 text-center text-slate-500">Aucune donnée trouvée dans la base de registres.</div>`;
+                    tableCont.innerHTML = `<div class="p-8 text-center text-slate-500 font-mono italic">Aucune donnée trouvée dans la base de registres.</div>`;
                 } else {
                     tableCont.innerHTML = `
                     <div class="overflow-x-auto w-full">
@@ -703,10 +928,13 @@
                         </table>
                     </div>`;
                 }
+            }, (err) => {
+                console.error("Erreur de synchronisation de l'historique:", err);
+                handlePermissionError(err);
             });
         }
 
-        // --- CANAL SUPPORT DE TCHAT ---
+        // --- CANAL SUPPORT DE TCHAT (CÔTÉ CLIENT) ---
         window.submitChat = async (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
@@ -721,23 +949,17 @@
             btn.disabled = true;
 
             try {
-                const msgRef = collection(db, 'artifacts', appId, 'users', window.appState.user.uid, 'messages');
+                const msgRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(msgRef, {
+                    userId: window.appState.user.uid,
+                    userEmail: window.appState.user.email,
                     text: text,
                     sender: 'user',
                     timestamp: Date.now()
                 });
-
-                // Réponse automatique simulée d'un administrateur (asynchrone)
-                setTimeout(async () => {
-                    await addDoc(msgRef, {
-                        text: `[Système] Requête transmise avec succès. Un opérateur du protocole de support traitera votre demande "${text.substring(0, 15)}..." sous peu.`,
-                        sender: 'admin',
-                        timestamp: Date.now()
-                    });
-                }, 1500);
             } catch (err) {
                 console.error(err);
+                handlePermissionError(err);
                 window.showToast("Erreur lors de l'envoi du message.", "error");
             } finally {
                 input.disabled = false;
@@ -750,7 +972,7 @@
             container.innerHTML = `
             <div class="flex flex-col h-[calc(100vh-8rem)] animate-fadeIn">
               <header class="mb-6 shrink-0">
-                <h2 class="text-3xl font-bold text-white mb-2 font-mono uppercase tracking-wide">Canal Sécurisé bidirectionnel</h2>
+                <h2 class="text-3xl font-bold text-white mb-2 font-mono uppercase tracking-wide">Canal Sécurisé de support</h2>
                 <p class="text-slate-400">Échange direct crypté avec les administrateurs du réseau Sésame.</p>
               </header>
 
@@ -769,9 +991,10 @@
             </div>`;
 
             if(unsubChat) unsubChat();
-            const msgRef = collection(db, 'artifacts', appId, 'users', window.appState.user.uid, 'messages');
+            const msgRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
             unsubChat = onSnapshot(msgRef, (snapshot) => {
-                const msgs = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                const allMsgs = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                const msgs = allMsgs.filter(m => m.userId === window.appState.user.uid);
                 msgs.sort((a, b) => a.timestamp - b.timestamp);
                 
                 const chatBox = document.getElementById('chat-messages');
@@ -788,9 +1011,11 @@
                           </div>
                         </div>
                     `).join('');
-                    // Scroll automatique vers le bas
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
+            }, (err) => {
+                console.error("Erreur de synchronisation du tchat:", err);
+                handlePermissionError(err);
             });
         }
 
@@ -802,10 +1027,9 @@
             if(btn2) btn2.disabled = true;
 
             try {
-                const profileRef = doc(db, 'artifacts', appId, 'users', window.appState.user.uid, 'userData', 'profile');
+                const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', window.appState.user.uid);
                 const docSnap = await getDoc(profileRef);
                 if (docSnap.exists() && docSnap.data().subEnd) {
-                    // Recule la date de fin en DB de 31 jours pour tester l'expiration
                     const newEnd = docSnap.data().subEnd - (31 * 24 * 60 * 60 * 1000);
                     await updateDoc(profileRef, { subEnd: newEnd });
                     window.showToast("Dissonance temporelle appliquée (-31j en base).");
@@ -814,6 +1038,7 @@
                 }
             } catch (err) {
                 console.error(err);
+                handlePermissionError(err);
                 window.showToast("Erreur lors de la mise à jour temporelle.", "error");
             } finally {
                 setTimeout(() => { 
@@ -830,7 +1055,7 @@
             if(btn2) btn2.disabled = true;
 
             try {
-                const profileRef = doc(db, 'artifacts', appId, 'users', window.appState.user.uid, 'userData', 'profile');
+                const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', window.appState.user.uid);
                 const docSnap = await getDoc(profileRef);
                 let baseDate = Date.now();
                 if (docSnap.exists() && docSnap.data().subEnd && docSnap.data().subEnd > Date.now()) {
@@ -840,11 +1065,19 @@
                 
                 await updateDoc(profileRef, { status: 'active', subEnd: newEnd });
                 
-                const txRef = collection(db, 'artifacts', appId, 'users', window.appState.user.uid, 'transactions');
-                await addDoc(txRef, { type: 'reactivation', offerName: 'Réactivation Secours', price: 0, date: Date.now(), status: 'completed' });
+                const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
+                await addDoc(txRef, { 
+                    userId: window.appState.user.uid,
+                    type: 'reactivation', 
+                    offerName: 'Réactivation Secours', 
+                    price: 0, 
+                    date: Date.now(), 
+                    status: 'completed' 
+                });
                 window.showToast("Injection réussie. Module de secours de 7j déployé.");
             } catch (err) {
                 console.error(err);
+                handlePermissionError(err);
                 window.showToast("Échec de la réactivation.", "error");
             } finally {
                 setTimeout(() => { 
@@ -903,6 +1136,352 @@
                   <p class="mt-8 text-xs text-slate-500 text-center italic">
                     Note: Observez la réaction instantanée du statut et de l'accès réseau sur la page de "Télémétrie" grâce à la synchronisation en temps réel de Firestore.
                   </p>
+                </div>
+              </div>
+            </div>`;
+        }
+
+        // ==========================================
+        // 7. CONSOLE ADMINISTRATEUR GLOBALE (AMÉLIORÉE)
+        // ==========================================
+        
+        window.adminAddDays = async (clientId, days) => {
+            try {
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', clientId);
+                const snap = await getDoc(clientRef);
+                if (snap.exists()) {
+                    const currentEnd = snap.data().subEnd || Date.now();
+                    const newEnd = Math.max(Date.now(), currentEnd) + (days * 24 * 60 * 60 * 1000);
+                    await updateDoc(clientRef, {
+                        status: 'active',
+                        subEnd: newEnd
+                    });
+                    window.showToast("Licence client prolongée !");
+                }
+            } catch(e) {
+                handlePermissionError(e);
+                window.showToast("Erreur modification", "error");
+            }
+        };
+
+        window.adminToggleStatus = async (clientId, currentStatus) => {
+            try {
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', clientId);
+                const nextStatus = currentStatus === 'active' ? 'inactive' : 'active';
+                const subEnd = nextStatus === 'active' ? Date.now() + (7 * 24 * 60 * 60 * 1000) : null;
+                
+                await updateDoc(clientRef, {
+                    status: nextStatus,
+                    subEnd: subEnd
+                });
+                window.showToast(`Statut client modifié en: ${nextStatus}`);
+            } catch(e) {
+                handlePermissionError(e);
+                window.showToast("Erreur modification", "error");
+            }
+        };
+
+        window.adminAddUsage = async (clientId) => {
+            try {
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', clientId);
+                const snap = await getDoc(clientRef);
+                if (snap.exists()) {
+                    const currentUsage = snap.data().usageTotal || 0;
+                    await updateDoc(clientRef, {
+                        usageTotal: currentUsage + 10
+                    });
+                    window.showToast("Cycles de calcul client incrémentés.");
+                }
+            } catch(e) {
+                handlePermissionError(e);
+                window.showToast("Erreur incrément", "error");
+            }
+        };
+
+        window.adminResolveQuote = async (quoteId, nextStatus) => {
+            try {
+                const quoteRef = doc(db, 'artifacts', appId, 'public', 'data', 'quotes', quoteId);
+                await updateDoc(quoteRef, { status: nextStatus });
+                window.showToast(`Demande de devis marquée comme : ${nextStatus}`);
+            } catch(e) {
+                handlePermissionError(e);
+                window.showToast("Erreur de mise à jour du devis", "error");
+            }
+        };
+
+        window.adminSelectChatUser = (userId) => {
+            window.appState.adminSelectedClient = userId;
+            renderActiveTab();
+        };
+
+        window.adminSendSupportMessage = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('admin-chat-input');
+            const targetUserId = window.appState.adminSelectedClient;
+            if(!input || !targetUserId) return;
+
+            const text = input.value.trim();
+            if(!text) return;
+
+            input.value = '';
+            input.disabled = true;
+
+            try {
+                const msgRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                await addDoc(msgRef, {
+                    userId: targetUserId,
+                    userEmail: 'admin@sesame.com',
+                    text: text,
+                    sender: 'admin',
+                    timestamp: Date.now()
+                });
+            } catch(e) {
+                handlePermissionError(e);
+                window.showToast("Erreur d'envoi", "error");
+            } finally {
+                input.disabled = false;
+                input.focus();
+            }
+        };
+
+        function renderAdminTab(container) {
+            const { allProfiles, allQuotes, allMessages, adminSelectedClient } = window.appState;
+
+            const totalClients = allProfiles.length;
+            const pendingQuotesCount = allQuotes.filter(q => q.status === 'pending').length;
+            
+            const activeChatsCount = [...new Set(allMessages.filter(m => m.userId && m.userId !== 'admin').map(m => m.userId))].length;
+
+            const totalRevenue = allQuotes
+                .filter(q => q.status === 'approved')
+                .reduce((sum, q) => sum + (q.estimatedPrice || 0), 0);
+
+            let clientsRowsHTML = allProfiles.map(client => {
+                const isActive = client.status === 'active' && client.subEnd > Date.now();
+                const daysRemaining = client.subEnd ? Math.max(0, Math.ceil((client.subEnd - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
+                
+                return `
+                <tr class="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors">
+                  <td class="p-4 text-xs font-mono text-slate-300 truncate max-w-[180px]" title="${client.email}">${client.email}</td>
+                  <td class="p-4">
+                    <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase ${isActive ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-red-950/40 text-red-400 border border-red-500/20'}">
+                        ${isActive ? 'Actif' : 'Inactif / Expire'}
+                    </span>
+                  </td>
+                  <td class="p-4 text-xs text-slate-400 font-mono">${daysRemaining}j restants</td>
+                  <td class="p-4 text-xs text-cyan-400 font-mono">${client.usageTotal || 0} cycles</td>
+                  <td class="p-4 flex gap-2">
+                    <button onclick="window.adminAddDays('${client.id}', 7)" title="Prolonger de 7 jours"
+                      class="px-2 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 text-cyan-400 rounded text-[11px] transition-all flex items-center gap-1">
+                      <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> +7j
+                    </button>
+                    <button onclick="window.adminAddUsage('${client.id}')" title="Incrémenter +10 requêtes"
+                      class="px-2 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-purple-500 text-purple-400 rounded text-[11px] transition-all flex items-center gap-1">
+                      <i data-lucide="cpu" class="w-3.5 h-3.5"></i> +10 cycles
+                    </button>
+                    <button onclick="window.adminToggleStatus('${client.id}', '${client.status}')"
+                      class="px-2 py-1 bg-slate-950 hover:bg-red-950/30 border border-slate-800 hover:border-red-500 text-red-400 rounded text-[11px] transition-all">
+                      ${isActive ? 'Suspendre' : 'Débloquer'}
+                    </button>
+                  </td>
+                </tr>`;
+            }).join('');
+
+            const pendingQuotes = allQuotes.filter(q => q.status === 'pending');
+            let quotesPanelHTML = '';
+            
+            if (pendingQuotes.length === 0) {
+                quotesPanelHTML = `
+                <div class="p-8 text-center bg-slate-950/30 rounded-lg border border-slate-800/50">
+                    <p class="text-xs text-slate-500 italic font-mono">Aucun dossier ou devis en attente de modération.</p>
+                </div>`;
+            } else {
+                quotesPanelHTML = pendingQuotes.map(q => `
+                <div class="bg-slate-950 border border-slate-800/80 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all hover:border-slate-700">
+                  <div class="space-y-1">
+                    <span class="text-[10px] text-cyan-500 font-mono bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/30">${q.userEmail}</span>
+                    <h4 class="text-sm font-bold text-white uppercase font-mono mt-2">${q.nodes} Noeuds // ${q.storage} GB // SLA ${q.sla.toUpperCase()}</h4>
+                    <p class="text-xs text-purple-400 font-mono">Valeur estimée : ${q.estimatedPrice}€/mois</p>
+                  </div>
+                  <div class="flex gap-2 shrink-0">
+                    <button onclick="window.adminResolveQuote('${q.id}', 'approved')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs uppercase tracking-wide transition-all shadow-[0_0_10px_rgba(16,185,129,0.2)]">Accepter</button>
+                    <button onclick="window.adminResolveQuote('${q.id}', 'rejected')" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-xs uppercase tracking-wide transition-all">Refuser</button>
+                  </div>
+                </div>`).join('');
+            }
+
+            const chatClientsMap = {};
+            allMessages.forEach(msg => {
+                if(msg.userId && msg.userId !== 'admin') {
+                    chatClientsMap[msg.userId] = {
+                        userId: msg.userId,
+                        userEmail: msg.userEmail,
+                        lastMsg: msg.text,
+                        timestamp: msg.timestamp
+                    };
+                }
+            });
+            const chatClientsList = Object.values(chatClientsMap);
+
+            let selectedUserChatHTML = '';
+            if (adminSelectedClient) {
+                const targetClient = allProfiles.find(p => p.id === adminSelectedClient);
+                const targetEmail = targetClient ? targetClient.email : "Client inconnu";
+                const clientMsgs = allMessages.filter(m => m.userId === adminSelectedClient);
+                
+                selectedUserChatHTML = `
+                <div class="flex flex-col h-[350px] border border-slate-800 bg-slate-950 rounded-lg overflow-hidden">
+                  <div class="p-3 bg-slate-900 border-b border-slate-800 text-xs font-mono font-bold text-cyan-400 flex justify-between items-center">
+                    <span>Liaison active : ${targetEmail}</span>
+                    <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  </div>
+                  <div id="admin-chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-950/80">
+                    ${clientMsgs.map(m => `
+                      <div class="flex ${m.sender === 'admin' ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[80%] p-2.5 rounded-xl ${m.sender === 'admin' ? 'bg-purple-900/30 text-purple-200 border border-purple-500/20' : 'bg-slate-900 text-slate-300 border border-slate-800'}">
+                          <p class="text-[9px] font-bold uppercase tracking-wider ${m.sender === 'admin' ? 'text-purple-400' : 'text-cyan-400'}">${m.sender === 'admin' ? 'Vous (Admin)' : 'Client'}</p>
+                          <p class="text-sm break-words mt-1 font-mono">${m.text}</p>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <form onsubmit="window.adminSendSupportMessage(event)" class="p-3 border-t border-slate-800 bg-slate-900 flex gap-2 shrink-0">
+                    <input id="admin-chat-input" type="text" placeholder="Entrez la commande de réponse..." autocomplete="off"
+                      class="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-xs focus:outline-none focus:border-purple-500 text-white font-mono" />
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded text-xs font-bold font-mono tracking-widest transition-colors">RÉPONDRE</button>
+                  </form>
+                </div>`;
+                
+                setTimeout(() => {
+                    const cBox = document.getElementById('admin-chat-box');
+                    if(cBox) cBox.scrollTop = cBox.scrollHeight;
+                }, 50);
+            } else {
+                selectedUserChatHTML = `
+                <div class="h-[350px] border border-slate-800 bg-slate-950 rounded-lg flex flex-col items-center justify-center text-slate-500 text-xs italic p-6">
+                    <i data-lucide="message-square" class="w-8 h-8 text-slate-700 mb-2"></i>
+                    Sélectionnez un canal client à gauche pour ouvrir la liaison.
+                </div>`;
+            }
+
+            let chatListHTML = '';
+            if (chatClientsList.length === 0) {
+                chatListHTML = `<p class="text-xs text-slate-500 italic p-4 text-center font-mono">Aucune discussion active.</p>`;
+            } else {
+                chatListHTML = chatClientsList.map(c => {
+                    const isSelected = adminSelectedClient === c.userId;
+                    return `
+                    <button onclick="window.adminSelectChatUser('${c.userId}')"
+                      class="w-full text-left p-3 rounded border transition-all ${isSelected ? 'bg-purple-950/30 border-purple-500/50 text-white shadow-[inset_0_0_10px_rgba(168,85,247,0.1)]' : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-900 hover:border-slate-700'}">
+                      <div class="text-xs font-bold truncate font-mono">${c.userEmail}</div>
+                      <div class="text-[10px] text-slate-500 truncate mt-1">${c.lastMsg}</div>
+                    </button>`;
+                }).join('');
+            }
+
+            container.innerHTML = `
+            <div class="space-y-8 animate-fadeIn">
+              <header class="mb-4 flex justify-between items-center">
+                <div>
+                  <div class="flex items-center gap-3">
+                      <i data-lucide="shield" class="text-purple-400 w-8 h-8"></i>
+                      <h2 class="text-3xl font-bold text-white font-mono uppercase tracking-wide">Console d'Administration Globale</h2>
+                  </div>
+                  <p class="text-slate-400 mt-2">Accès ROOT — Surveillance bidirectionnelle et modération des requêtes du projet.</p>
+                </div>
+              </header>
+
+              <!-- Panel de Statistiques Globales -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+                  <div class="p-3 bg-cyan-950/50 border border-cyan-800/30 rounded-lg text-cyan-400">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Clients enregistrés</p>
+                    <p class="text-xl font-bold text-white font-mono">${totalClients}</p>
+                  </div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+                  <div class="p-3 bg-yellow-950/50 border border-yellow-800/30 rounded-lg text-yellow-400">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Devis en attente</p>
+                    <p class="text-xl font-bold text-white font-mono">${pendingQuotesCount}</p>
+                  </div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+                  <div class="p-3 bg-purple-950/50 border border-purple-800/30 rounded-lg text-purple-400">
+                    <i data-lucide="message-square" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Tchats Actifs</p>
+                    <p class="text-xl font-bold text-white font-mono">${activeChatsCount}</p>
+                  </div>
+                </div>
+                <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+                  <div class="p-3 bg-emerald-950/50 border border-emerald-800/30 rounded-lg text-emerald-400">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Revenu Estimé</p>
+                    <p class="text-xl font-bold text-white font-mono">${totalRevenue} €</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section 1 : Comptes clients -->
+              <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+                <h3 class="text-lg font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2 border-b border-slate-800 pb-3">
+                   <i data-lucide="user-check" class="text-cyan-400 w-5 h-5"></i> Gestion des Comptes Clients
+                </h3>
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                          <tr class="bg-slate-950 border-b border-slate-800">
+                            <th class="p-4 text-xs font-bold text-slate-400 uppercase font-mono">Identifiant Client</th>
+                            <th class="p-4 text-xs font-bold text-slate-400 uppercase font-mono">Statut Réseau</th>
+                            <th class="p-4 text-xs font-bold text-slate-400 uppercase font-mono">Énergie Temporelle</th>
+                            <th class="p-4 text-xs font-bold text-slate-400 uppercase font-mono">Consommation cycles</th>
+                            <th class="p-4 text-xs font-bold text-slate-400 uppercase font-mono">Actions Console</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${allProfiles.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-slate-500 font-mono italic">Aucun profil client détecté en base de données.</td></tr>` : clientsRowsHTML}
+                        </tbody>
+                    </table>
+                </div>
+              </div>
+
+              <!-- Section Double : Devis & Support Tchat -->
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Gauche : Devis en attente -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+                    <h3 class="text-lg font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2 border-b border-slate-800 pb-3">
+                       <i data-lucide="database" class="text-yellow-500 w-5 h-5"></i> Modération des Devis de Calcul
+                    </h3>
+                    <div class="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+                        ${quotesPanelHTML}
+                    </div>
+                </div>
+
+                <!-- Droite : Support Tchat de secours -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+                    <h3 class="text-lg font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2 border-b border-slate-800 pb-3">
+                       <i data-lucide="message-square" class="text-purple-400 w-5 h-5"></i> Tchat d'Assistance Bidirectionnel
+                    </h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Liste canaux -->
+                        <div class="col-span-1 border-r border-slate-800 pr-3 space-y-2 max-h-[350px] overflow-y-auto">
+                            <span class="text-[9px] uppercase font-bold text-slate-500 font-mono">Canaux actifs</span>
+                            ${chatListHTML}
+                        </div>
+                        <!-- Fenêtre tchat -->
+                        <div class="col-span-2">
+                            ${selectedUserChatHTML}
+                        </div>
+                    </div>
                 </div>
               </div>
             </div>`;
