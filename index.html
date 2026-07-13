@@ -98,10 +98,6 @@
                     <button onclick="window.redirectToStripeLink()" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs uppercase font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] flex items-center justify-center gap-2">
                         <i data-lucide="external-link" class="w-4 h-4"></i> Ouvrir la page Stripe
                     </button>
-                    <!-- Bouton de validation simulateur de secours -->
-                    <button id="btn-confirm-pay" onclick="window.simulatePaymentValidation()" class="w-full py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/20 hover:border-emerald-500/40 rounded-lg text-xs uppercase font-bold transition-all">
-                        Simuler la validation (J'ai payé)
-                    </button>
                     <button type="button" onclick="window.closePaymentModal()" class="w-full py-2 bg-slate-950 hover:bg-slate-800 text-slate-500 rounded-lg text-xs uppercase font-bold transition-colors">
                         Fermer
                     </button>
@@ -268,7 +264,8 @@
             
             // Filtres & UI
             activeCatalogTab: 'Tous', 
-            virtualDate: new Date('2026-07-13T16:22:00').getTime(), 
+            virtualDate: Date.now(), // Devient dynamique et synchronisé à l'heure réelle
+            manualTimeMode: false,   // Suit si l'utilisateur a figé l'heure manuellement
             adminSelectedClient: null,
             adminSearchQuery: '', 
             firestoreBlocked: false,
@@ -348,10 +345,13 @@
 
         // Obtenir un horodatage virtuel progressif pour préserver l'ordre d'envoi en cas de date virtuelle identique
         window.getVirtualTimestamp = () => {
-            if (!window.appState.perfStart) {
-                window.appState.perfStart = performance.now();
+            if (window.appState.manualTimeMode) {
+                if (!window.appState.perfStart) {
+                    window.appState.perfStart = performance.now();
+                }
+                return window.appState.virtualDate + Math.floor(performance.now() - window.appState.perfStart);
             }
-            return window.appState.virtualDate + Math.floor(performance.now() - window.appState.perfStart);
+            return Date.now();
         };
 
         // Rétablissement de connexion après la mise à jour des règles Firestore
@@ -508,6 +508,18 @@
             renderApp();
         });
 
+        // Ticking system en arrière-plan pour synchroniser l'heure réelle locale et le fuseau horaire
+        setInterval(() => {
+            if (!window.appState.manualTimeMode) {
+                window.appState.virtualDate = Date.now();
+                const clockInput = document.getElementById('system-clock-input');
+                if (clockInput && document.activeElement !== clockInput) {
+                    const formatted = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                    clockInput.value = formatted;
+                }
+            }
+        }, 1000);
+
         function setupAdminAndGlobalListeners() {
             teardownAdminListeners();
 
@@ -584,12 +596,6 @@
             document.getElementById('pay-modal-service-name').innerText = service.name;
             document.getElementById('pay-modal-amount').innerText = `${service.price.toFixed(2)} €`;
 
-            const btnConfirm = document.getElementById('btn-confirm-pay');
-            if (btnConfirm) {
-                btnConfirm.disabled = false;
-                btnConfirm.innerHTML = `Simuler la validation (J'ai payé)`;
-            }
-
             const modal = document.getElementById('payment-modal');
             if(modal) {
                 modal.classList.remove('hidden');
@@ -610,59 +616,6 @@
             
             window.showToast("Redirection vers Stripe Checkout...");
             window.open(stripeUrl, '_blank');
-        };
-
-        // Simulation de validation post-Stripe (Webhook Simulation)
-        window.simulatePaymentValidation = async () => {
-            const sId = window.appState.payingServiceId;
-            const service = SERVICES_DATA.find(s => s.id === sId);
-            if(!service) return;
-
-            const btnConfirm = document.getElementById('btn-confirm-pay');
-            if(btnConfirm) {
-                btnConfirm.disabled = true;
-                btnConfirm.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin inline mr-2"></i> Vérification Stripe...';
-                lucide.createIcons({ root: btnConfirm });
-            }
-
-            setTimeout(async () => {
-                const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', window.appState.user.uid);
-                const userServices = { ...window.appState.profile.services };
-                const currentServiceState = userServices[sId] || { status: 'inactive', subEnd: null };
-
-                try {
-                    const isFirstActivation = !currentServiceState.subEnd;
-                    let subEnd = window.getVirtualTimestamp() + (service.durationDays * 24 * 60 * 60 * 1000);
-                    
-                    // Créer le justificatif transactionnel Firestore
-                    const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
-                    await addDoc(txRef, {
-                        userId: window.appState.user.uid,
-                        serviceId: sId,
-                        offerName: service.name,
-                        price: service.price,
-                        date: window.getVirtualTimestamp(),
-                        detail: isFirstActivation ? "Paiement de première activation opéré sur Stripe" : "Renouvellement automatique via Stripe Portal"
-                    });
-
-                    // Activer le service
-                    userServices[sId] = {
-                        status: 'active',
-                        subEnd: subEnd,
-                        freeReactivationUsed: currentServiceState.freeReactivationUsed || false
-                    };
-
-                    await updateDoc(profileRef, { services: userServices });
-                    window.showToast(`Paiement de ${service.price.toFixed(2)} € validé. Le service [${service.name}] est désormais actif !`);
-                    window.closePaymentModal();
-                    renderApp();
-
-                } catch (err) {
-                    console.error(err);
-                    window.showToast("Erreur d'écriture de paiement Firebase.", "error");
-                    if(btnConfirm) btnConfirm.disabled = false;
-                }
-            }, 1000);
         };
 
         // Désactivation d'un service
@@ -771,10 +724,19 @@
             const newTime = new Date(dateValue).getTime();
             if(!isNaN(newTime)) {
                 window.appState.virtualDate = newTime;
+                window.appState.manualTimeMode = true; // Activer le gel temporel manuel
                 window.appState.perfStart = performance.now(); 
-                window.showToast(`Ligne temporelle modifiée : ${new Date(newTime).toLocaleString()}`);
+                window.showToast(`Horloge gelée manuellement : ${new Date(newTime).toLocaleString()}`);
                 renderApp();
             }
+        };
+
+        // Rétablir l'alignement sur l'heure réelle en direct
+        window.restoreRealTime = () => {
+            window.appState.manualTimeMode = false;
+            window.appState.virtualDate = Date.now();
+            window.showToast("Synchronisation avec l'heure réelle locale établie.");
+            renderApp();
         };
 
         // ==========================================
@@ -1010,15 +972,15 @@
                         const isActive = client.status === 'active' && client.subEnd > window.appState.virtualDate;
                         const daysRemaining = client.subEnd ? Math.max(0, Math.ceil((client.subEnd - window.appState.virtualDate) / (1000 * 60 * 60 * 24))) : 0;
                         return `
-                        <tr class="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors">
-                          <td class="p-4 text-xs font-mono text-slate-300 truncate max-w-[180px]" title="${client.email}">${client.email}</td>
+                        <tr class="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors font-mono">
+                          <td class="p-4 text-xs text-slate-300 truncate max-w-[180px]" title="${client.email}">${client.email}</td>
                           <td class="p-4">
                             <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase ${isActive ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-red-950/40 text-red-400 border border-red-500/20'}">
                                 ${isActive ? 'Actif' : 'Inactif / Expire'}
                             </span>
                           </td>
-                          <td class="p-4 text-xs text-slate-400 font-mono">${daysRemaining}j restants</td>
-                          <td class="p-4 text-xs text-cyan-400 font-mono">${client.usageTotal || 0} cycles</td>
+                          <td class="p-4 text-xs text-slate-400">${daysRemaining}j restants</td>
+                          <td class="p-4 text-xs text-cyan-400">${client.usageTotal || 0} cycles</td>
                           <td class="p-4 flex gap-2">
                             <button onclick="window.adminAddDays('${client.id}', 7)" title="Prolonger de 7 jours"
                               class="px-2 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500 text-cyan-400 rounded text-[11px] transition-all flex items-center gap-1">
@@ -1200,7 +1162,7 @@ service cloud.firestore {
         }
 
         function getMainDashboardHTML() {
-            const { user, profile, transactions, activeCatalogTab, virtualDate, isAdmin, adminSelectedClient, adminSearchQuery, stripeLinks } = window.appState;
+            const { user, profile, transactions, activeCatalogTab, virtualDate, manualTimeMode, isAdmin, adminSelectedClient, adminSearchQuery, stripeLinks } = window.appState;
             
             const servicesState = (profile && profile.services) ? profile.services : {
                 'stockage-cloud': { status: 'inactive', subEnd: null },
@@ -1238,7 +1200,8 @@ service cloud.firestore {
                 }
             });
 
-            const formattedVirtualDate = new Date(virtualDate - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0,16);
+            // Format de la date pour le composant de formulaire input de type datetime-local
+            const formattedVirtualDate = new Date(virtualDate - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 
             const filteredServices = SERVICES_DATA.filter(s => {
                 if (activeCatalogTab === 'Tous') return true;
@@ -1255,6 +1218,9 @@ service cloud.firestore {
             // Résoudre dynamiquement le nom du client sélectionné pour l'espace d'administration du tchat
             const selectedClientProfile = window.appState.allProfiles.find(p => p.id === adminSelectedClient);
             const selectedClientName = selectedClientProfile ? window.getClientName(selectedClientProfile.email).toUpperCase() : 'AGENT';
+
+            // Identification du fuseau horaire
+            const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris';
 
             return `
             <div class="relative min-h-screen bg-[#030712] text-slate-100 p-6 flex flex-col gap-6 max-w-7xl mx-auto z-10 font-sans">
@@ -1326,10 +1292,17 @@ service cloud.firestore {
                     </div>
                     <div class="bg-[#0b1322] border border-[#1e293b]/70 p-4 rounded-xl flex flex-col justify-center relative overflow-hidden group shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
                         <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider font-mono flex items-center gap-1">
-                            <i data-lucide="clock" class="w-3 h-3 text-yellow-500 animate-spin"></i> Date Virtuelle
+                            <i data-lucide="clock" class="w-3 h-3 text-yellow-500 ${manualTimeMode ? 'animate-none' : 'animate-spin'}"></i> 
+                            ${manualTimeMode ? 'Temps Figé' : 'Date Réelle'}
                         </span>
-                        <input type="datetime-local" value="${formattedVirtualDate}" onchange="window.updateVirtualDate(this.value)"
+                        <input type="datetime-local" id="system-clock-input" value="${formattedVirtualDate}" onchange="window.updateVirtualDate(this.value)"
                             class="bg-transparent text-xs font-bold text-yellow-500 focus:outline-none mt-1 w-full border-none p-0 cursor-pointer font-mono" />
+                        <span class="text-[9px] text-slate-500 block truncate max-w-full font-mono mt-0.5">${localTimeZone}</span>
+                        ${manualTimeMode ? `
+                            <button onclick="window.restoreRealTime()" class="text-[9px] text-cyan-400 hover:text-cyan-300 font-mono mt-1 hover:underline text-left flex items-center gap-1 border-t border-slate-800/80 pt-1">
+                                <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Sync Réelle
+                            </button>
+                        ` : ''}
                     </div>
                 </section>
 
