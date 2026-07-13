@@ -1316,7 +1316,7 @@ service cloud.firestore {
                             <!-- Filtre onglets -->
                             <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
                                 <h3 class="text-base font-bold text-white font-mono uppercase tracking-wider">Nos Services Disponibles</h3>
-                                <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800/50 font-mono">
+                                <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800/50 font-mono items-center">
                                     ${['Tous', 'Mensuel', 'Annuel', 'Devis'].map(tab => `
                                         <button onclick="window.setCatalogFilterTab('${tab}')" 
                                             class="px-4 py-1.5 text-xs font-bold uppercase rounded-lg transition-all ${
@@ -1327,6 +1327,13 @@ service cloud.firestore {
                                             ${tab}
                                         </button>
                                     `).join('')}
+                                    
+                                    <!-- Nouveau bouton externe Pimp My CAD (Pimp My Drawing) -->
+                                    <a href="https://pimpmydrawing.com" target="_blank" 
+                                        class="ml-2 px-3.5 py-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 hover:border-purple-500/60 text-purple-300 rounded-lg text-xs font-bold transition-all flex items-center gap-1 uppercase tracking-wider shadow-[0_0_10px_rgba(168,85,247,0.15)] hover:shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                                        title="Visiter Pimp My Drawing pour des ressources vectorielles CAO gratuites">
+                                        <i data-lucide="palette" class="w-3.5 h-3.5 text-purple-400"></i> Pimp CAD
+                                    </a>
                                 </div>
                             </div>
 
