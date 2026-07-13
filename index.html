@@ -271,8 +271,10 @@
             firestoreBlocked: false,
             perfStart: performance.now(),
             
-            // Cible de paiement actif
-            payingServiceId: null
+            // Cibles de paiement actives
+            payingServiceId: null,
+            payingQuoteId: null,
+            payingCustomPrice: null
         };
 
         let unsubProfile = null;
@@ -477,12 +479,14 @@
                         if (snapshot.exists()) {
                             window.appState.stripeLinks = snapshot.data().links || {};
                         } else {
-                            // Initialisation de secours
+                            // Initialisation de secours pour tous les services (y compris sur devis)
                             window.appState.stripeLinks = {
                                 'stockage-cloud': 'https://buy.stripe.com/mock_stockage',
                                 'gestion-crm': 'https://buy.stripe.com/mock_crm',
                                 'cdn-global': 'https://buy.stripe.com/mock_cdn',
-                                'security-pack': 'https://buy.stripe.com/mock_security'
+                                'security-pack': 'https://buy.stripe.com/mock_security',
+                                'custom-app': 'https://buy.stripe.com/mock_custom_app',
+                                'ux-design': 'https://buy.stripe.com/mock_ux_design'
                             };
                         }
                         renderApp();
@@ -592,6 +596,8 @@
             if(!service) return;
 
             window.appState.payingServiceId = sId;
+            window.appState.payingQuoteId = null;
+            window.appState.payingCustomPrice = service.price;
 
             document.getElementById('pay-modal-service-name').innerText = service.name;
             document.getElementById('pay-modal-amount').innerText = `${service.price.toFixed(2)} €`;
@@ -607,15 +613,80 @@
             const modal = document.getElementById('payment-modal');
             if(modal) modal.classList.add('hidden');
             window.appState.payingServiceId = null;
+            window.appState.payingQuoteId = null;
+            window.appState.payingCustomPrice = null;
         };
 
-        // Ouvre le vrai lien de paiement Stripe configuré par l'admin
+        // Ouvre le vrai lien de paiement Stripe configuré par l'admin + Simule le Webhook d'activation
         window.redirectToStripeLink = () => {
             const sId = window.appState.payingServiceId;
+            const qId = window.appState.payingQuoteId;
+            const customPrice = window.appState.payingCustomPrice;
             const stripeUrl = window.appState.stripeLinks[sId] || "https://stripe.com";
             
-            window.showToast("Redirection vers Stripe Checkout...");
+            window.showToast("Redirection vers Stripe Checkout... Validation automatique par Webhook dans 3s !");
             window.open(stripeUrl, '_blank');
+
+            // Simulation de webhook d'arrière-plan résolvant le paiement Stripe après 3 secondes
+            setTimeout(async () => {
+                const user = window.appState.user;
+                if(!user) return;
+                
+                try {
+                    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid);
+                    const userServices = { ...window.appState.profile.services };
+                    
+                    const service = SERVICES_DATA.find(s => s.id === sId);
+                    const finalPrice = customPrice !== null ? customPrice : (service ? service.price : 0);
+                    const serviceName = service ? service.name : "Service Sésame";
+                    
+                    const durationDays = service && service.durationDays > 0 ? service.durationDays : 30; // 30 jours par défaut pour les devis approuvés
+                    let subEnd = window.getVirtualTimestamp() + (durationDays * 24 * 60 * 60 * 1000);
+
+                    // 1. Ajouter la transaction financière au log public Sésame
+                    const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
+                    await addDoc(txRef, {
+                        userId: user.uid,
+                        serviceId: sId,
+                        offerName: serviceName,
+                        price: finalPrice,
+                        date: window.getVirtualTimestamp(),
+                        detail: qId ? "Paiement de devis approuvé opéré via Stripe" : "Paiement d'abonnement opéré via Stripe"
+                    });
+
+                    // 2. Activer le service au niveau du profil client
+                    userServices[sId] = {
+                        status: 'active',
+                        subEnd: subEnd,
+                        freeReactivationUsed: false
+                    };
+                    await updateDoc(profileRef, { services: userServices });
+
+                    // 3. Si c'est un paiement de devis, mettre à jour le statut du devis
+                    if(qId) {
+                        const quoteRef = doc(db, 'artifacts', appId, 'public', 'data', 'quotes', qId);
+                        await updateDoc(quoteRef, { status: 'approved_paid' });
+
+                        // Notification système automatique sur la passerelle tchat administrable
+                        const msgRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                        await addDoc(msgRef, {
+                            userId: user.uid,
+                            userEmail: user.email,
+                            text: `[Système Webhook] L'agent a validé le devis pour "${serviceName}" au tarif de ${finalPrice.toFixed(2)} € par paiement Stripe Checkout.`,
+                            sender: 'user',
+                            timestamp: window.getVirtualTimestamp()
+                        });
+                    }
+
+                    window.showToast(`Paiement Stripe confirmé ! Le module [${serviceName}] est désormais actif.`);
+                    window.closePaymentModal();
+                    renderApp();
+
+                } catch(err) {
+                    console.error("Erreur de finalisation Stripe Webhook : ", err);
+                    window.showToast("Erreur d'enregistrement Stripe Webhook.", "error");
+                }
+            }, 3000);
         };
 
         // Désactivation d'un service
@@ -1215,6 +1286,58 @@ service cloud.firestore {
                 .filter(m => m.userId === user.uid)
                 .sort((a, b) => a.timestamp - b.timestamp);
 
+            // Filtrage des demandes de devis appartenant au client connecté
+            const clientQuotes = window.appState.allQuotes.filter(q => q.userId === user.uid);
+            
+            // Construction du bloc dynamique de suivi de devis côté client
+            let clientQuotesHTML = "";
+            if (clientQuotes.length > 0) {
+                clientQuotesHTML = `
+                <div class="mt-8 border-t border-slate-800/80 pt-6">
+                    <h4 class="text-xs font-bold text-cyan-400 uppercase tracking-wider font-mono mb-4 flex items-center gap-1.5">
+                        <i data-lucide="file-text"></i> Suivi de mes demandes de Devis (${clientQuotes.length})
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${clientQuotes.map(q => {
+                            let statusBadge = "";
+                            let actionButtons = "";
+                            let cardBorder = "border-slate-800 bg-slate-950/30";
+                            
+                            if (q.status === 'pending') {
+                                statusBadge = `<span class="px-2 py-0.5 rounded bg-amber-950/40 border border-amber-500/30 text-amber-400 text-[10px] font-mono">⏳ En attente d'estimation</span>`;
+                            } else if (q.status === 'proposed') {
+                                cardBorder = "border-purple-500/40 bg-[#16122e]/30 shadow-[0_0_15px_rgba(168,85,247,0.08)]";
+                                statusBadge = `<span class="px-2 py-0.5 rounded bg-purple-950/40 border border-purple-500/40 text-purple-300 text-[10px] font-mono font-bold animate-pulse">💡 Proposition : ${q.price.toFixed(2)} €</span>`;
+                                actionButtons = `
+                                <div class="flex gap-2 mt-3 justify-end font-mono">
+                                    <button onclick="window.clientPayQuote('${q.id}', '${q.serviceId}', ${q.price})" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] uppercase font-bold transition-all shadow-[0_0_10px_rgba(16,185,129,0.3)]">Accepter & Payer</button>
+                                    <button onclick="window.clientRejectQuote('${q.id}')" class="px-2.5 py-1.5 bg-slate-950 hover:bg-red-950/30 text-red-400 border border-slate-850 hover:border-red-500/40 rounded text-[10px] uppercase transition-all">Refuser</button>
+                                </div>`;
+                            } else if (q.status === 'approved_paid') {
+                                cardBorder = "border-emerald-500/20 bg-emerald-950/10";
+                                statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono">✅ Validé & Payé (${q.price.toFixed(2)} €)</span>`;
+                            } else if (q.status === 'rejected') {
+                                statusBadge = `<span class="px-2 py-0.5 rounded bg-red-950/30 border border-red-500/20 text-red-400 text-[10px] font-mono">❌ Rejeté par l'admin</span>`;
+                            } else if (q.status === 'rejected_by_client') {
+                                statusBadge = `<span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 text-[10px] font-mono">❌ Refusé par vous</span>`;
+                            }
+
+                            return `
+                            <div class="border ${cardBorder} rounded-xl p-4 flex flex-col justify-between transition-all">
+                                <div class="flex justify-between items-start gap-2">
+                                    <div class="overflow-hidden">
+                                        <h5 class="text-xs font-bold text-white uppercase font-mono truncate">${q.serviceName}</h5>
+                                        <p class="text-[9px] text-slate-500 mt-1 font-mono">${new Date(q.date).toLocaleDateString()}</p>
+                                    </div>
+                                    ${statusBadge}
+                                </div>
+                                ${actionButtons}
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }
+
             // Résoudre dynamiquement le nom du client sélectionné pour l'espace d'administration du tchat
             const selectedClientProfile = window.appState.allProfiles.find(p => p.id === adminSelectedClient);
             const selectedClientName = selectedClientProfile ? window.getClientName(selectedClientProfile.email).toUpperCase() : 'AGENT';
@@ -1242,7 +1365,7 @@ service cloud.firestore {
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-xl font-bold text-white tracking-wide font-mono">Sésame</span>
-                            <span class="px-2 py-0.5 bg-slate-800/80 border border-slate-700/50 rounded-full text-[10px] text-slate-400 font-mono">v2.4</span>
+                            <span class="px-2 py-0.5 bg-slate-800/80 border border-slate-700/50 rounded-full text-[10px] text-slate-400 font-mono">Ouvre-Toi</span>
                         </div>
                     </div>
 
@@ -1381,6 +1504,9 @@ service cloud.firestore {
                                     </div>`;
                                 }).join('')}
                             </div>
+                            
+                            <!-- Insertion du bloc dynamique de suivi de devis client -->
+                            ${clientQuotesHTML}
                         </div>
                     </div>
 
@@ -1486,21 +1612,28 @@ service cloud.firestore {
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         
-                        <!-- 1. Demandes de Devis Client (col-1) -->
+                        <!-- 1. Demandes de Devis Client (col-1) avec fixation de tarif -->
                         <div class="bg-slate-950/60 border border-[#1e293b]/70 rounded-xl p-5 flex flex-col gap-4">
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Demandes de Devis Client</h4>
                             <div class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                                 ${window.appState.allQuotes.filter(q => q.status === 'pending').length === 0 
                                     ? `<p class="text-slate-500 text-xs italic font-mono text-center py-6">Aucun devis en attente.</p>`
                                     : window.appState.allQuotes.filter(q => q.status === 'pending').map(q => `
-                                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg flex justify-between items-center gap-2">
+                                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-lg flex flex-col gap-3">
                                             <div class="overflow-hidden">
                                                 <p class="text-xs font-bold text-slate-300 font-sans truncate">${q.serviceName}</p>
                                                 <p class="text-[10px] text-slate-500 font-mono mt-1 truncate">${q.userEmail}</p>
                                             </div>
-                                            <div class="flex gap-1 font-mono shrink-0">
-                                                <button onclick="window.adminResolveQuote('${q.id}', 'approved')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-[10px] uppercase transition-all">Approuver</button>
-                                                <button onclick="window.adminResolveQuote('${q.id}', 'rejected')" class="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-[10px] uppercase transition-all">Rejeter</button>
+                                            <div class="flex items-center gap-2">
+                                                <div class="relative flex-1">
+                                                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-[10px] font-mono">Tarif (€) :</span>
+                                                    <input type="number" id="quote-price-${q.id}" placeholder="0.00" min="1"
+                                                        class="w-full bg-slate-950 border border-slate-800 rounded pl-16 pr-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-purple-500" />
+                                                </div>
+                                                <div class="flex gap-1 font-mono shrink-0">
+                                                    <button onclick="window.adminProposeQuote('${q.id}')" class="px-2 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold text-[10px] uppercase transition-all" title="Proposer ce tarif au client">Proposer</button>
+                                                    <button onclick="window.adminResolveQuote('${q.id}', 'rejected')" class="px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-[10px] uppercase transition-all" title="Rejeter la demande">Rejeter</button>
+                                                </div>
                                             </div>
                                         </div>
                                     `).join('')}
@@ -1566,13 +1699,14 @@ service cloud.firestore {
                                 <i data-lucide="settings" class="text-purple-400 w-4 h-4"></i> Liens de Paiement Stripe
                             </h4>
                             <div class="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-                                ${SERVICES_DATA.filter(s => s.type !== 'devis').map(s => {
+                                ${SERVICES_DATA.map(s => {
                                     const currentLink = stripeLinks[s.id] || '';
+                                    const priceDisplay = s.type === 'devis' ? 'Sur Devis' : `${s.price.toFixed(2)} €`;
                                     return `
                                     <div class="space-y-1.5 bg-slate-900 p-3 rounded-lg border border-slate-800">
                                         <div class="flex justify-between font-bold text-white">
                                             <span>${s.name}</span>
-                                            <span class="text-purple-400">${s.price.toFixed(2)} €</span>
+                                            <span class="text-purple-400">${priceDisplay}</span>
                                         </div>
                                         <input type="text" placeholder="Coller le lien Stripe (https://buy.stripe.com/...)" value="${currentLink}"
                                             onchange="window.updateStripeLinkValue('${s.id}', this.value)"
@@ -1684,33 +1818,72 @@ service cloud.firestore {
             }
         };
 
+        // L'administrateur fixe un tarif et le propose au client
+        window.adminProposeQuote = async (quoteId) => {
+            const priceInput = document.getElementById(`quote-price-${quoteId}`);
+            if(!priceInput) return;
+            
+            const price = parseFloat(priceInput.value);
+            if(isNaN(price) || price <= 0) {
+                window.showToast("Veuillez saisir un tarif valide supérieur à 0 €.", "error");
+                return;
+            }
+
+            try {
+                const quoteRef = doc(db, 'artifacts', appId, 'public', 'data', 'quotes', quoteId);
+                await updateDoc(quoteRef, {
+                    status: 'proposed',
+                    price: price
+                });
+                window.showToast(`Tarif de ${price.toFixed(2)} € proposé au client !`);
+            } catch(e) {
+                console.error(e);
+                window.showToast("Erreur de modification du devis.", "error");
+            }
+        };
+
+        // L'administrateur rejette une demande de devis
         window.adminResolveQuote = async (quoteId, nextStatus) => {
             try {
                 const quoteRef = doc(db, 'artifacts', appId, 'public', 'data', 'quotes', quoteId);
-                const qSnap = await getDoc(quoteRef);
-                
-                if (qSnap.exists()) {
-                    const qData = qSnap.data();
-                    await updateDoc(quoteRef, { status: nextStatus });
-                    
-                    if (nextStatus === 'approved') {
-                        const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', qData.userId);
-                        const pSnap = await getDoc(profileRef);
-                        
-                        if (pSnap.exists()) {
-                            const services = { ...pSnap.data().services };
-                            const virtualTimestamp = window.getVirtualTimestamp ? window.getVirtualTimestamp() : Date.now();
-                            services[qData.serviceId] = {
-                                status: 'active',
-                                subEnd: virtualTimestamp + (30 * 24 * 60 * 60 * 1000) 
-                            };
-                            await updateDoc(profileRef, { services });
-                        }
-                    }
-                    window.showToast(`Demande de devis marquée comme : ${nextStatus}`);
-                }
+                await updateDoc(quoteRef, { status: nextStatus });
+                window.showToast(`Demande de devis marquée comme : ${nextStatus}`);
             } catch(e) {
+                console.error(e);
                 window.showToast("Erreur de traitement du devis", "error");
+            }
+        };
+
+        // Le client refuse une proposition de devis
+        window.clientRejectQuote = async (quoteId) => {
+            window.showCyberConfirm("Confirmez-vous le refus de cette proposition de tarif ?", async () => {
+                try {
+                    const quoteRef = doc(db, 'artifacts', appId, 'public', 'data', 'quotes', quoteId);
+                    await updateDoc(quoteRef, { status: 'rejected_by_client' });
+                    window.showToast("Proposition de tarif déclinée.");
+                } catch(e) {
+                    console.error(e);
+                    window.showToast("Erreur lors de la modification.", "error");
+                }
+            });
+        };
+
+        // Le client accepte la proposition de devis et initie le paiement Stripe
+        window.clientPayQuote = (quoteId, serviceId, price) => {
+            window.appState.payingServiceId = serviceId;
+            window.appState.payingQuoteId = quoteId;
+            window.appState.payingCustomPrice = price;
+
+            const service = SERVICES_DATA.find(s => s.id === serviceId);
+            const serviceName = service ? service.name : "Service Spécialisé";
+
+            document.getElementById('pay-modal-service-name').innerText = serviceName;
+            document.getElementById('pay-modal-amount').innerText = `${price.toFixed(2)} €`;
+
+            const modal = document.getElementById('payment-modal');
+            if(modal) {
+                modal.classList.remove('hidden');
+                lucide.createIcons({ root: modal });
             }
         };
 
