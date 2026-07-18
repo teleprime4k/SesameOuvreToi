@@ -177,7 +177,7 @@
             </div>
 
             <div class="mt-8 pt-4 border-t border-slate-800 flex justify-end gap-3 font-sans">
-                <button onclick="window.printInvoice()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs uppercase font-bold transition-all shadow-[0_0_10px_rgba(8,145,178,0.3)] min-h-[38px]">
+                <button onclick="window.printInvoice()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs uppercase font-bold transition-all shadow-[0_0_10px_rgba(38,166,154,0.3)] min-h-[38px]">
                     Imprimer Reçu
                 </button>
                 <button onclick="window.closeInvoice()" class="px-4 py-2 bg-slate-950 hover:bg-slate-800 text-slate-400 rounded-lg text-xs uppercase font-bold transition-colors min-h-[38px]">
@@ -297,6 +297,8 @@
             isLoginMode: true,
             authLoading: false,
             authError: '',
+            authSuccessMessage: '', // Bandeau de succès d'inscription
+            preventAutoLogin: false, // Flag pour empêcher la connexion automatique après inscription
             authRole: 'client',      
             email: '',
             password: '',
@@ -309,6 +311,7 @@
             allProfiles: [],
             allQuotes: [],
             allMessages: [],
+            allTransactions: [], // Chiffre d'affaires admin
             stripeLinks: {}, // Stocke les liens d'administration généraux
             globalAnnouncement: null, // Message de notification globale diffusé
             
@@ -338,8 +341,12 @@
             // Personnalisation des liens Stripe par client
             selectedStripeClientId: "",
 
-            // Personnalisation de prix par client (Nouveau module Administrateur)
-            selectedPriceClientId: ""
+            // Personnalisation de prix par client
+            selectedPriceClientId: "",
+
+            // Nouveaux filtres analytiques pour le Registre Financier (Mois & Année)
+            adminFinanceYearFilter: "all",
+            adminFinanceMonthFilter: "all"
         };
 
         let unsubProfile = null;
@@ -347,8 +354,37 @@
         let unsubAdminProfiles = null;
         let unsubAdminQuotes = null;
         let unsubAdminMessages = null;
+        let unsubAllTransactions = null;
         let unsubStripeConfig = null;
         let unsubAnnouncement = null;
+
+        // Fonction d'alerte de confirmation Cyberpunk customisée
+        window.showCyberConfirm = (message, onConfirm) => {
+            const modal = document.getElementById('confirm-modal');
+            const msgEl = document.getElementById('confirm-message');
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            if(!modal || !msgEl || !okBtn || !cancelBtn) return;
+
+            msgEl.innerText = message;
+            modal.classList.remove('hidden');
+            lucide.createIcons({ root: modal });
+
+            const cleanUp = () => {
+                modal.classList.add('hidden');
+                okBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+
+            okBtn.onclick = () => {
+                cleanUp();
+                if(onConfirm) onConfirm();
+            };
+
+            cancelBtn.onclick = () => {
+                cleanUp();
+            };
+        };
 
         // Copier du texte de manière compatible avec les iFrames (Fallbacks standards)
         window.copyToClipboard = (text) => {
@@ -365,6 +401,28 @@
                 console.error("Erreur de copie: ", e);
                 window.showToast("Échec de la copie.", "error");
             }
+        };
+
+        // Gérer le changement d'avatar et le convertir en base64 pour stockage direct Firestore
+        window.uploadAvatar = (file) => {
+            if (!file) return;
+            if (file.size > 1 * 1024 * 1024) { // Limite ergonomique de 1 Mo pour base64
+                window.showToast("L'image est trop lourde (max 1 Mo).", "error");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result;
+                try {
+                    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', window.appState.user.uid);
+                    await updateDoc(profileRef, { avatar: base64Data });
+                    window.showToast("Photo de profil enregistrée !");
+                } catch (err) {
+                    console.error("Erreur d'upload avatar : ", err);
+                    window.showToast("Erreur lors de l'enregistrement de l'avatar.", "error");
+                }
+            };
+            reader.readAsDataURL(file);
         };
 
         // Notification Toast
@@ -464,6 +522,15 @@
         // 5. INITIALISATION & LISTENERS
         // ==========================================
         onAuthStateChanged(auth, async (currentUser) => {
+            // Sécurité anti-login automatique après inscription
+            if (currentUser && window.appState.preventAutoLogin) {
+                window.appState.preventAutoLogin = false;
+                await signOut(auth);
+                window.appState.loadingAuth = false;
+                renderApp();
+                return;
+            }
+
             window.appState.user = currentUser;
             window.appState.firestoreBlocked = false; 
             window.appState.authLoading = false; 
@@ -618,6 +685,16 @@
                     window.appState.allMessages = msgs;
                     renderApp();
                 }, handlePermissionError);
+
+                // Écouteur global des transactions pour le calcul du chiffre d'affaires
+                const txCol = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
+                unsubAllTransactions = onSnapshot(txCol, (snap) => {
+                    const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    txs.sort((a, b) => b.date - a.date);
+                    window.appState.allTransactions = txs;
+                    renderApp();
+                }, handlePermissionError);
+
             } catch(err) {
                 handlePermissionError(err);
             }
@@ -627,6 +704,7 @@
             if(unsubAdminProfiles) { unsubAdminProfiles(); unsubAdminProfiles = null; }
             if(unsubAdminQuotes) { unsubAdminQuotes(); unsubAdminQuotes = null; }
             if(unsubAdminMessages) { unsubAdminMessages(); unsubAdminMessages = null; }
+            if(unsubAllTransactions) { unsubAllTransactions(); unsubAllTransactions = null; }
         }
 
         // ==========================================
@@ -711,6 +789,7 @@
                     const txRef = collection(db, 'artifacts', appId, 'public', 'data', 'transactions');
                     await addDoc(txRef, {
                         userId: user.uid,
+                        userEmail: user.email,
                         serviceId: sId,
                         offerName: serviceName,
                         price: finalPrice,
@@ -878,14 +957,14 @@
         // 7. WIDGET DE FACTURE (CYBER-INVOICE SYSTEM)
         // ==========================================
         window.openInvoice = (txId) => {
-            const tx = window.appState.transactions.find(t => t.id === txId);
+            const tx = (window.appState.isAdmin ? window.appState.allTransactions : window.appState.transactions).find(t => t.id === txId);
             if(!tx) return;
 
             const modal = document.getElementById('invoice-modal');
             const details = document.getElementById('invoice-details');
             if(!modal || !details) return;
 
-            const clientName = window.getClientName(window.appState.user.email);
+            const clientName = window.getClientName(tx.userEmail || window.appState.user.email);
 
             details.innerHTML = `
                 <div class="space-y-4 border-b border-slate-800 pb-4">
@@ -905,7 +984,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-500">E-MAIL:</span>
-                        <span class="text-white">${window.appState.user.email}</span>
+                        <span class="text-white">${tx.userEmail || 'Inconnu'}</span>
                     </div>
                 </div>
                 <div class="space-y-4 pt-2">
@@ -1013,6 +1092,7 @@
         window.setAuthRole = (role) => {
             window.appState.authRole = role;
             window.appState.authError = '';
+            window.appState.authSuccessMessage = ''; // Reset messages à l'onglet change
             window.appState.email = '';
             window.appState.password = '';
             window.appState.adminSecret = '';
@@ -1037,6 +1117,7 @@
             
             window.appState.authLoading = true;
             window.appState.authError = '';
+            window.appState.authSuccessMessage = '';
             renderApp();
 
             const isLoginMode = window.appState.isLoginMode;
@@ -1069,10 +1150,20 @@
                 if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
+                    // Activation du flag pour couper la connexion auto et renvoyer à l'écran de login
+                    window.appState.preventAutoLogin = true;
                     await createUserWithEmailAndPassword(auth, email, password);
+                    
+                    // Succès d'enregistrement, on bascule vers la vue connexion
+                    window.appState.isLoginMode = true; 
+                    window.appState.authSuccessMessage = "Félicitations ! Votre compte client Sésame a bien été créé. Vous pouvez désormais vous connecter en toute sécurité.";
+                    window.appState.password = ''; // On efface le mot de passe pour des raisons de sécurité
                 }
             } catch (err) {
+                window.appState.preventAutoLogin = false;
                 window.appState.authError = err.message.replace('Firebase: ', '');
+                window.appState.authSuccessMessage = '';
+            } finally {
                 window.appState.authLoading = false;
                 renderApp();
             }
@@ -1081,6 +1172,7 @@
         window.toggleAuthMode = () => {
             window.appState.isLoginMode = !window.appState.isLoginMode;
             window.appState.authError = '';
+            window.appState.authSuccessMessage = '';
             window.appState.authLoading = false; 
             renderApp();
         };
@@ -1095,6 +1187,7 @@
             window.appState.email = '';
             window.appState.password = '';
             window.appState.adminSecret = '';
+            window.appState.authSuccessMessage = '';
             signOut(auth).then(() => {
                 window.showToast("Déconnexion réussie.");
                 renderApp();
@@ -1120,9 +1213,18 @@
                     container.innerHTML = filtered.map(client => {
                         const isActive = client.status === 'active' && client.subEnd > window.appState.virtualDate;
                         const daysRemaining = client.subEnd ? Math.max(0, Math.ceil((client.subEnd - window.appState.virtualDate) / (1000 * 60 * 60 * 24))) : 0;
+                        
+                        // Utilisation de la photo de profil du client dans la gestion admin si disponible
+                        const avatarHTML = client.avatar 
+                            ? `<img src="${client.avatar}" class="w-6 h-6 rounded-full object-cover border border-purple-500/30" />`
+                            : `<div class="w-6 h-6 rounded-full bg-slate-950 flex items-center justify-center border border-slate-800 text-[10px] font-bold text-slate-400 font-mono">${window.getClientName(client.email).charAt(0)}</div>`;
+
                         return `
                         <tr class="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors font-mono">
-                          <td class="p-4 text-xs text-slate-300 truncate max-w-[180px]" title="${client.email}">${client.email}</td>
+                          <td class="p-4 text-xs text-slate-300 truncate max-w-[180px] flex items-center gap-2" title="${client.email}">
+                            ${avatarHTML}
+                            <span class="truncate">${client.email}</span>
+                          </td>
                           <td class="p-4">
                             <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase ${isActive ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-red-950/40 text-red-400 border border-red-500/20'}">
                                 ${isActive ? 'Actif' : 'Inactif / Expire'}
@@ -1152,7 +1254,7 @@
         };
 
         function getAuthScreenHTML() {
-            const { isLoginMode, authLoading, authError, authRole, email, password, adminSecret, showPassword } = window.appState;
+            const { isLoginMode, authLoading, authError, authSuccessMessage, authRole, email, password, adminSecret, showPassword } = window.appState;
             const showSecret = !isLoginMode && authRole === 'admin';
 
             return `
@@ -1196,7 +1298,23 @@
                     }
                 </div>
                 
-                ${authError ? `<div class="mb-4 p-3 bg-red-950/50 border border-red-500/50 rounded text-red-400 text-sm font-mono leading-relaxed">${authError}</div>` : ''}
+                <!-- Bannière d'erreur -->
+                ${authError ? `<div class="mb-4 p-3 bg-red-950/50 border border-red-500/50 rounded text-red-400 text-sm font-mono leading-relaxed flex items-start gap-2">
+                    <i data-lucide="alert-circle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold block uppercase text-[10px]">Alerte :</span>
+                        ${authError}
+                    </div>
+                </div>` : ''}
+
+                <!-- Bannière de succès d'inscription -->
+                ${authSuccessMessage ? `<div class="mb-4 p-3 bg-emerald-950/50 border border-emerald-500/50 rounded text-emerald-400 text-sm font-mono leading-relaxed flex items-start gap-2 animate-fadeIn">
+                    <i data-lucide="check-circle" class="w-5 h-5 shrink-0 mt-0.5 text-emerald-400"></i>
+                    <div>
+                        <span class="font-bold block uppercase text-[10px] text-emerald-300">Système Sésame :</span>
+                        ${authSuccessMessage}
+                    </div>
+                </div>` : ''}
                 
                 <form onsubmit="window.submitAuth(event)" class="space-y-4 font-mono">
                   <div>
@@ -1311,7 +1429,7 @@ service cloud.firestore {
         }
 
         function getMainDashboardHTML() {
-            const { user, profile, transactions, activeCatalogTab, virtualDate, manualTimeMode, isAdmin, adminSelectedClient, adminSearchQuery, stripeLinks, globalAnnouncement } = window.appState;
+            const { user, profile, transactions, allTransactions, activeCatalogTab, virtualDate, manualTimeMode, isAdmin, adminSelectedClient, adminSearchQuery, stripeLinks, globalAnnouncement, adminFinanceYearFilter, adminFinanceMonthFilter } = window.appState;
             
             const servicesState = (profile && profile.services) ? profile.services : {
                 'stockage-cloud': { status: 'inactive', subEnd: null },
@@ -1429,7 +1547,25 @@ service cloud.firestore {
                 </div>`;
             }
 
-            // Résoudre les valeurs des identifiants attribués à ce client (si présents)
+            // Gestion de la Photo de Profil Cliquable pour le Client (Base64)
+            const defaultAvatarHTML = `
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-950/80 border-2 border-cyan-500/40 hover:border-cyan-400 flex items-center justify-center cursor-pointer transition-all relative group overflow-hidden shrink-0" title="Changer de photo de profil">
+                    <i data-lucide="camera" class="w-5 h-5 text-cyan-400/80 group-hover:scale-110 transition-transform"></i>
+                    <input type="file" accept="image/*" onchange="window.uploadAvatar(this.files[0])" class="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>`;
+
+            const clientAvatarHTML = (!isAdmin && profile && profile.avatar)
+                ? `
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-cyan-500/40 hover:border-cyan-400 cursor-pointer transition-all relative group overflow-hidden shrink-0">
+                    <img src="${profile.avatar}" class="w-full h-full object-cover" />
+                    <div class="absolute inset-0 bg-slate-950/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i data-lucide="camera" class="w-4 h-4 text-cyan-400"></i>
+                    </div>
+                    <input type="file" accept="image/*" onchange="window.uploadAvatar(this.files[0])" class="absolute inset-0 opacity-0 cursor-pointer" />
+                </div>`
+                : defaultAvatarHTML;
+
+            // Résoudre les valeurs des identifiants attribués à ce client
             const hasCredentials = !isAdmin && profile && profile.credentials && (profile.credentials.identifier || profile.credentials.password || profile.credentials.extra);
             
             // Résoudre les identifiants pour l'affichage de l'Admin en mode édition réactive
@@ -1438,7 +1574,61 @@ service cloud.firestore {
             const activeCredPass = activeCredClient?.credentials?.password || "";
             const activeCredExtra = activeCredClient?.credentials?.extra || "";
 
-            // Résoudre la discussion tchat Admin
+            // Calcul du Chiffre d'Affaires Global (CA) de l'Admin
+            let globalCA = 0;
+            let currentYearCA = 0;
+            let currentMonthCA = 0;
+            let filteredCA = 0;
+            
+            const vDateObj = new Date(virtualDate);
+            const currentYearNum = vDateObj.getFullYear();
+            const currentMonthNum = vDateObj.getMonth(); // 0-11
+            const MONTH_NAMES_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+            let processedTransactions = [];
+
+            if (isAdmin && allTransactions) {
+                // 1. Calcul du CA total (Global)
+                globalCA = allTransactions.reduce((sum, tx) => sum + (tx.price || 0), 0);
+
+                // 2. Calcul du CA pour l'année en cours
+                currentYearCA = allTransactions
+                    .filter(tx => new Date(tx.date).getFullYear() === currentYearNum)
+                    .reduce((sum, tx) => sum + (tx.price || 0), 0);
+
+                // 3. Calcul du CA pour le mois en cours
+                currentMonthCA = allTransactions
+                    .filter(tx => {
+                        const d = new Date(tx.date);
+                        return d.getFullYear() === currentYearNum && d.getMonth() === currentMonthNum;
+                    })
+                    .reduce((sum, tx) => sum + (tx.price || 0), 0);
+
+                // 4. Filtrage dynamique appliqué par l'Admin pour la liste des transactions
+                processedTransactions = allTransactions.filter(tx => {
+                    const txDate = new Date(tx.date);
+                    const matchesYear = adminFinanceYearFilter === "all" || txDate.getFullYear() === parseInt(adminFinanceYearFilter);
+                    const matchesMonth = adminFinanceMonthFilter === "all" || txDate.getMonth() === parseInt(adminFinanceMonthFilter);
+                    return matchesYear && matchesMonth;
+                });
+
+                filteredCA = processedTransactions.reduce((sum, tx) => sum + (tx.price || 0), 0);
+            }
+
+            // Construction du graphique d'analyse mensuel pour l'année sélectionnée (ou en cours)
+            let chartYear = adminFinanceYearFilter !== "all" ? parseInt(adminFinanceYearFilter) : currentYearNum;
+            let monthlyTotals = Array(12).fill(0);
+            if (isAdmin && allTransactions) {
+                allTransactions.forEach(tx => {
+                    const d = new Date(tx.date);
+                    if (d.getFullYear() === chartYear) {
+                        monthlyTotals[d.getMonth()] += (tx.price || 0);
+                    }
+                });
+            }
+            const maxMonthVal = Math.max(...monthlyTotals, 1); // Éviter division par zéro
+
+            // Résoudre la discussion tchat Admin et injecter l'avatar du client actif dans le tchat
             const selectedClientProfile = window.appState.allProfiles.find(p => p.id === adminSelectedClient);
             const selectedClientName = selectedClientProfile ? window.getClientName(selectedClientProfile.email).toUpperCase() : 'AGENT';
 
@@ -1451,14 +1641,13 @@ service cloud.firestore {
 
                 <!-- EN-TÊTE PRINCIPAL (Totalement responsive) -->
                 <header class="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-[#0d1527]/90 backdrop-blur-xl border border-[#1e293b]/70 px-4 py-4 sm:px-6 rounded-2xl relative z-10 shadow-[0_4px_25px_rgba(0,0,0,0.3)] overflow-hidden gap-4">
-                    <!-- Grand Symbole de Bouclier en arrière-plan (masqué sur très petit mobile pour plus de clarté) -->
                     <div class="absolute right-12 top-1/2 -translate-y-1/2 text-[#101c30] pointer-events-none select-none hidden sm:block">
                         <svg width="220" height="220" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="opacity-25">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>
                     </div>
 
-                    <!-- Gauche: Logo Sésame & Version (Remplacement de v2.4 par Ouvre-Toi) -->
+                    <!-- Gauche: Logo Sésame & Version (Ouvre-Toi) -->
                     <div class="flex items-center gap-3 relative z-10">
                         <div class="p-2 bg-[#091524] border border-cyan-500/40 rounded-xl text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]">
                             <i data-lucide="shield" class="w-5 h-5 fill-cyan-400/10"></i>
@@ -1469,8 +1658,11 @@ service cloud.firestore {
                         </div>
                     </div>
 
-                    <!-- Droite: Profil et Déconnexion -->
+                    <!-- Droite: Profil, Avatar interactif et Déconnexion -->
                     <div class="flex items-center justify-between md:justify-end gap-3 sm:gap-4 relative z-10 w-full md:w-auto border-t border-slate-800 md:border-none pt-3 md:pt-0">
+                        <!-- Avatar interactif d'upload pour le Client uniquement -->
+                        ${!isAdmin ? clientAvatarHTML : ''}
+
                         <div class="text-left md:text-right overflow-hidden">
                             <div class="flex items-center gap-2 md:justify-end">
                                 <span class="text-xs sm:text-sm font-semibold text-white tracking-wide truncate">
@@ -1491,7 +1683,7 @@ service cloud.firestore {
                     </div>
                 </header>
 
-                <!-- BANNIÈRE DE NOTIFICATION GLOBALE -->
+                <!-- BANNIÈRE DE NOTIFICATION GLOBALE (Totalement optimisée pour mobile) -->
                 ${!isAdmin && globalAnnouncement && globalAnnouncement.text ? `
                 <div class="relative bg-gradient-to-r from-amber-950/40 to-yellow-950/30 border border-amber-500/40 p-3 sm:p-4 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.15)] flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 overflow-hidden z-10 animate-pulse">
                     <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
@@ -1590,7 +1782,7 @@ service cloud.firestore {
                             class="bg-transparent text-[11px] sm:text-xs font-bold text-yellow-500 focus:outline-none mt-1 w-full border-none p-0 cursor-pointer font-mono min-h-[24px]" />
                         <span class="text-[8px] sm:text-[9px] text-slate-500 block truncate max-w-full font-mono mt-0.5">${localTimeZone}</span>
                         ${manualTimeMode ? `
-                            <button onclick="window.restoreRealTime()" class="text-[8px] sm:text-[9px] text-cyan-400 hover:text-cyan-300 font-mono mt-1 hover:underline text-left flex items-center gap-1 border-t border-slate-800/80 pt-1">
+                            <button onclick="window.restoreRealTime()" class="text-[9px] text-cyan-400 hover:text-cyan-300 font-mono mt-1 hover:underline text-left flex items-center gap-1 border-t border-slate-800/80 pt-1">
                                 <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i> Sync Réelle
                             </button>
                         ` : ''}
@@ -1796,9 +1988,10 @@ service cloud.firestore {
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-6 w-full">
+                    <!-- Grille principale de l'Admin : alignée sur 6 colonnes sur grand écran -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6 w-full">
                         
-                        <!-- 1. Demandes de Devis Client (col-1) -->
+                        <!-- 1. Demandes de Devis Client -->
                         <div class="bg-slate-950/60 border border-[#1e293b]/70 rounded-xl p-4 flex flex-col gap-4 min-w-0 w-full">
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Demandes de Devis Client</h4>
                             <div class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
@@ -1833,7 +2026,7 @@ service cloud.firestore {
                             </div>
                         </div>
 
-                        <!-- 2. Messagerie de Support Client (col-2) -->
+                        <!-- 2. Messagerie de Support Client -->
                         <div class="bg-slate-950/60 border border-[#1e293b]/70 rounded-xl p-4 flex flex-col gap-4 min-w-0 w-full">
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">Messagerie de Support Client</h4>
                             <div class="grid grid-cols-3 gap-3 h-[300px]">
@@ -1858,8 +2051,15 @@ service cloud.firestore {
                                 </div>
                                 <div class="col-span-2 flex flex-col h-full overflow-hidden font-sans">
                                     ${window.appState.adminSelectedClient ? `
-                                        <div class="p-1.5 bg-slate-900/50 border-b border-slate-800/60 text-[9px] font-bold font-mono text-slate-400 uppercase tracking-wider mb-2 rounded-t-lg truncate w-full">
-                                            DISCUSSION AVEC ${selectedClientName}
+                                        <div class="p-1.5 bg-slate-900/50 border-b border-slate-800/60 text-[9px] font-bold font-mono text-slate-400 uppercase tracking-wider mb-2 rounded-t-lg truncate w-full flex items-center gap-1.5">
+                                            <!-- Affichage de l'avatar du client dans le tchat Admin -->
+                                            ${(() => {
+                                                const selectedProfile = window.appState.allProfiles.find(p => p.id === window.appState.adminSelectedClient);
+                                                return selectedProfile && selectedProfile.avatar
+                                                    ? `<img src="${selectedProfile.avatar}" class="w-5 h-5 rounded-full object-cover border border-purple-500/40" />`
+                                                    : `<div class="w-5 h-5 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-[8px] text-slate-400 font-mono">${selectedClientName.charAt(0)}</div>`;
+                                            })()}
+                                            <span class="truncate">DISCUSSION AVEC ${selectedClientName}</span>
                                         </div>
                                         <div id="admin-chat-box" class="flex-1 overflow-y-auto space-y-3 p-1 font-mono text-[11px] h-[220px]">
                                             ${window.appState.allMessages
@@ -1880,7 +2080,7 @@ service cloud.firestore {
                                             <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-2.5 py-1 rounded text-white text-[11px] font-bold shrink-0 min-h-[30px]">OK</button>
                                         </form>
                                     ` : `
-                                        <p class="text-slate-500 text-[10px] italic font-mono text-center mt-20 font-sans">Sélectionnez un client à gauche.</p>
+                                        <p class="text-slate-500 text-[10px] italic font-mono text-center mt-20 font-sans">Sélectionnez un tchat client.</p>
                                     `}
                                 </div>
                             </div>
@@ -1981,7 +2181,7 @@ service cloud.firestore {
                             </div>
                         </div>
 
-                        <!-- 5. DIFFUSION DE NOTIFICATION GLOBALE -->
+                        <!-- 5. DIFFUSION DE NOTIFICATION GLOBALE AVEC CORBEILLE DE RETRAIT -->
                         <div class="bg-slate-950/60 border border-[#1e293b]/70 rounded-xl p-4 flex flex-col gap-4 min-w-0 w-full">
                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
                                 <i data-lucide="megaphone" class="text-purple-400 w-4 h-4"></i> Diffuser une Info Globale
@@ -2000,41 +2200,97 @@ service cloud.firestore {
                                     </button>
                                     ${globalAnnouncement ? `
                                     <button onclick="window.adminClearAnnouncement()" 
-                                        class="py-2 px-3.5 bg-red-950/40 hover:bg-red-900/40 text-red-400 border border-red-500/20 hover:border-red-500/50 rounded font-bold text-xs uppercase transition-all min-h-[36px] flex items-center justify-center" title="Retirer la notification active">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        class="py-2 px-3.5 bg-red-950/40 hover:bg-red-900/40 text-red-400 border border-red-500/20 hover:border-red-500/50 rounded font-bold text-xs uppercase transition-all min-h-[36px] flex items-center justify-center" title="Retirer l'annonce avec la corbeille">
+                                        <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
                                     </button>
                                     ` : ''}
                                 </div>
                             </div>
                         </div>
 
+                        <!-- 6. REGISTRE FINANCIER AMÉLIORÉ (Avec statistiques par Mois et par Année & Mini Graphique CSS - Repositionné ici !) -->
+                        <div class="bg-[#0c1221] border border-purple-900/30 rounded-xl p-4 flex flex-col gap-4 min-w-0 w-full relative overflow-hidden">
+                            <div class="border-b border-slate-800 pb-2 flex flex-col gap-1">
+                                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5 truncate">
+                                    <i data-lucide="line-chart" class="text-purple-400 w-4 h-4 shrink-0"></i> Registre Financier
+                                </h4>
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    <span class="text-[8px] font-bold text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-500/10" title="Chiffre d'Affaires Global">Global: ${globalCA.toFixed(0)}€</span>
+                                    <span class="text-[8px] font-bold text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/10" title="CA de l'année en cours">${currentYearNum}: ${currentYearCA.toFixed(0)}€</span>
+                                    <span class="text-[8px] font-bold text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/10" title="CA du mois en cours">${MONTH_NAMES_FR[currentMonthNum].substring(0,3)}: ${currentMonthCA.toFixed(0)}€</span>
+                                </div>
+                            </div>
+
+                            <!-- Mini graphique en barres horizontales / colonnes CSS de la répartition mensuelle de l'année sélectionnée -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center text-[8px] text-slate-500">
+                                    <span>RÉPARTITION MENSUELLE (${chartYear}) :</span>
+                                </div>
+                                <div class="h-10 bg-slate-950/50 rounded border border-slate-900 flex items-end justify-between px-2 py-1 gap-0.5">
+                                    ${monthlyTotals.map((mVal, idx) => {
+                                        const hPercent = Math.max(8, Math.round((mVal / maxMonthVal) * 100));
+                                        const isThisMonth = idx === currentMonthNum && chartYear === currentYearNum;
+                                        const barColor = isThisMonth ? 'bg-cyan-500' : (mVal > 0 ? 'bg-purple-500/70' : 'bg-slate-800');
+                                        return `<div class="${barColor} rounded-t-sm w-full transition-all hover:brightness-125" style="height: ${hPercent}%" title="${MONTH_NAMES_FR[idx]} : ${mVal.toFixed(2)} €"></div>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Filtres temporels pour la table de transaction -->
+                            <div class="grid grid-cols-2 gap-1 bg-slate-950/60 p-1.5 rounded border border-slate-900">
+                                <select onchange="window.updateFinanceYearFilter(this.value)" class="bg-slate-900 border border-slate-800 text-[9px] text-slate-300 rounded px-1 py-0.5 focus:outline-none focus:border-purple-500">
+                                    <option value="all" ${adminFinanceYearFilter === "all" ? "selected" : ""}>Toutes années</option>
+                                    <option value="2026" ${adminFinanceYearFilter === "2026" ? "selected" : ""}>2026</option>
+                                    <option value="2025" ${adminFinanceYearFilter === "2025" ? "selected" : ""}>2025</option>
+                                </select>
+                                <select onchange="window.updateFinanceMonthFilter(this.value)" class="bg-slate-900 border border-slate-800 text-[9px] text-slate-300 rounded px-1 py-0.5 focus:outline-none focus:border-purple-500">
+                                    <option value="all" ${adminFinanceMonthFilter === "all" ? "selected" : ""}>Tous les mois</option>
+                                    ${MONTH_NAMES_FR.map((name, i) => `<option value="${i}" ${adminFinanceMonthFilter === String(i) ? "selected" : ""}>${name}</option>`).join('')}
+                                </select>
+                            </div>
+
+                            <div class="space-y-1.5 overflow-y-auto max-h-[120px] pr-1 no-scrollbar flex-1">
+                                ${processedTransactions.length === 0 
+                                    ? `<p class="text-slate-600 text-center italic text-[9px] mt-6">Aucune transaction.</p>`
+                                    : processedTransactions.map(tx => `
+                                        <div onclick="window.openInvoice('${tx.id}')" class="bg-slate-900/60 border border-slate-800/80 p-2 rounded flex justify-between items-center hover:bg-slate-850 cursor-pointer transition-colors gap-2">
+                                            <div class="min-w-0 flex-1">
+                                                <p class="text-slate-200 font-bold text-[9px] truncate">${tx.offerName}</p>
+                                                <p class="text-[7.5px] text-slate-500 truncate mt-0.5">${window.getClientName(tx.userEmail || "Client")} (${new Date(tx.date).toLocaleDateString()})</p>
+                                            </div>
+                                            <span class="text-[9px] font-bold text-emerald-400 shrink-0 font-mono">+${tx.price.toFixed(1)} €</span>
+                                        </div>
+                                    `).join('')}
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- LIGNE SECONDAIRE D'ADMINISTRATION DE STRIPE & AJUSTEMENT DE TARIFS (Entièrement personnalisable par Client !) -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 w-full">
+                    <!-- LIGNE SECONDAIRE D'ADMINISTRATION DE STRIPE & AJUSTEMENT DE TARIFS (Ajusté sur 2 colonnes égales) -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 w-full">
                         
                         <!-- CONFIGURATION DES LIENS DE PAIEMENT STRIPE (GLOBALE OU PAR CLIENT) -->
-                        <div class="bg-slate-950/60 border border-purple-900/30 rounded-xl p-4 sm:p-5 flex flex-col gap-4 font-mono text-xs w-full lg:col-span-2">
+                        <div class="bg-slate-950/60 border border-purple-900/30 rounded-xl p-4 sm:p-5 flex flex-col gap-4 font-mono text-xs w-full">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-2.5 gap-2">
                                 <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                                     <i data-lucide="settings" class="text-purple-400 w-4 h-4"></i> Liens Stripe Personnalisés
                                 </h4>
                                 
                                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                                    <span class="text-[9px] text-slate-500 uppercase shrink-0">Modifier :</span>
+                                    <span class="text-[9px] text-slate-500 uppercase shrink-0">Client :</span>
                                     <select onchange="window.adminChangeStripeClient(this.value)"
                                         class="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-[10px] text-white focus:outline-none focus:border-purple-500 flex-1 sm:flex-none min-h-[28px]">
-                                        <option value="">🌍 Configuration Globale (Par Défaut)</option>
+                                        <option value="">🌍 Global (Par Défaut)</option>
                                         ${window.appState.allProfiles.filter(p => p.email !== ADMIN_EMAIL).map(p => `
                                             <option value="${p.id}" ${window.appState.selectedStripeClientId === p.id ? 'selected' : ''}>
-                                                👤 ${window.getClientName(p.email)} (${p.email})
+                                                👤 ${window.getClientName(p.email)}
                                             </option>
                                         `).join('')}
                                     </select>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto no-scrollbar pr-1">
                                 ${(() => {
                                     // Résoudre la source des liens à afficher dans les champs d'édition
                                     const stripeClientId = window.appState.selectedStripeClientId;
@@ -2050,7 +2306,7 @@ service cloud.firestore {
                                                 <span class="truncate pr-1">${s.name}</span>
                                                 <span class="${labelColor} shrink-0 text-[8px] uppercase">${stripeClientId ? 'Client' : 'Global'}</span>
                                             </div>
-                                            <input type="text" placeholder="Coller le lien Stripe (https://buy.stripe.com/...)" value="${currentLink}"
+                                            <input type="text" placeholder="https://buy.stripe.com/..." value="${currentLink}"
                                                 onchange="window.updateStripeLinkValue('${s.id}', this.value)"
                                                 class="w-full bg-slate-950 border border-slate-850 rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-purple-500 text-[9px] min-h-[28px]" />
                                         </div>`;
@@ -2059,14 +2315,14 @@ service cloud.firestore {
                             </div>
                         </div>
 
-                        <!-- 6. AJUSTEMENT DE TARIFS COMPTES CLIENTS AVEC PRIX BARRÉS (Nouveau module Administrateur) -->
+                        <!-- AJUSTEMENT DE TARIFS COMPTES CLIENTS AVEC PRIX BARRÉS -->
                         <div class="bg-slate-950/60 border border-purple-900/30 rounded-xl p-4 sm:p-5 flex flex-col gap-4 font-mono text-xs w-full">
-                            <div class="border-b border-slate-800 pb-2 flex flex-col gap-1.5">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-2.5 gap-2">
                                 <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                                     <i data-lucide="tags" class="text-purple-400 w-4 h-4"></i> Ajuster les Tarifs Clients
                                 </h4>
                                 <select onchange="window.adminChangePriceClient(this.value)"
-                                    class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-purple-500 min-h-[32px]">
+                                    class="bg-slate-950 border border-slate-800 rounded px-2.5 py-1 text-[10px] text-white focus:outline-none focus:border-purple-500 min-h-[28px] flex-1 sm:flex-none">
                                     <option value="">-- Choisir un client --</option>
                                     ${window.appState.allProfiles.filter(p => p.email !== ADMIN_EMAIL).map(p => `
                                         <option value="${p.id}" ${window.appState.selectedPriceClientId === p.id ? 'selected' : ''}>
@@ -2076,26 +2332,24 @@ service cloud.firestore {
                                 </select>
                             </div>
 
-                            <div class="space-y-3 flex-1 overflow-y-auto max-h-[160px] pr-1 no-scrollbar">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[220px] overflow-y-auto no-scrollbar pr-1 flex-1">
                                 ${(() => {
                                     const pClientId = window.appState.selectedPriceClientId;
                                     const pClient = window.appState.allProfiles.find(p => p.id === pClientId);
-                                    if (!pClient) return `<p class="text-slate-600 text-center italic text-[9px] mt-6">Sélectionnez un client pour personnaliser ses tarifs.</p>`;
+                                    if (!pClient) return `<p class="text-slate-600 text-center italic text-[9px] mt-6 w-full col-span-2">Sélectionnez un client pour personnaliser ses tarifs.</p>`;
 
                                     const customPrices = pClient.customPrices || {};
-                                    // Filtrer uniquement les services à tarification fixe d'origine (non sur devis)
                                     return SERVICES_DATA.filter(s => s.type !== 'devis').map(s => {
                                         const currentPrice = customPrices[s.id] !== undefined ? customPrices[s.id] : "";
                                         return `
                                         <div class="bg-slate-900/50 border border-slate-800 p-2 rounded-lg flex items-center justify-between gap-3">
                                             <div class="truncate">
                                                 <span class="text-white block font-bold truncate text-[10px] sm:text-xs">${s.name}</span>
-                                                <span class="text-[9px] text-slate-500 font-mono">Prix de base : ${s.price.toFixed(2)} €</span>
+                                                <span class="text-[9px] text-slate-500 font-mono">Base: ${s.price.toFixed(2)} €</span>
                                             </div>
-                                            <div class="relative w-24 shrink-0">
-                                                <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-slate-500 text-[9px]">€ :</span>
+                                            <div class="relative w-20 shrink-0">
                                                 <input type="number" id="custom-price-input-${s.id}" placeholder="Defaut" value="${currentPrice}" min="1"
-                                                    class="w-full bg-slate-950 border border-slate-850 rounded pl-5 pr-1 py-1 text-[10px] text-white font-mono focus:outline-none focus:border-purple-500" />
+                                                    class="w-full bg-slate-950 border border-slate-850 rounded px-1.5 py-1 text-[10px] text-white font-mono focus:outline-none focus:border-purple-500 text-right" />
                                             </div>
                                         </div>`;
                                     }).join('');
@@ -2112,14 +2366,12 @@ service cloud.firestore {
 
                     </div>
 
-                    <!-- RECHERCHE DE COMPTE CLIENT -->
-                    <div class="bg-slate-950/40 border border-[#1e293b]/70 p-4 rounded-xl flex flex-col justify-center w-full gap-3 mt-4">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="search" class="w-5 h-5 text-purple-400 shrink-0"></i>
-                            <input type="text" placeholder="Rechercher un compte client par nom ou e-mail..." value="${adminSearchQuery}"
-                                oninput="window.handleAdminSearch(this.value)"
-                                class="flex-1 bg-transparent text-xs sm:text-sm focus:outline-none text-white font-mono placeholder:text-slate-600 min-h-[24px]" />
-                        </div>
+                    <!-- MOTEUR DE RECHERCHE DE CLIENTS ADMIN -->
+                    <div class="bg-slate-950/40 border border-[#1e293b]/70 p-3 sm:p-4 rounded-xl flex items-center gap-3 mt-4 w-full">
+                        <i data-lucide="search" class="w-5 h-5 text-purple-400 shrink-0"></i>
+                        <input type="text" placeholder="Rechercher un compte client par nom ou e-mail..." value="${adminSearchQuery}"
+                            oninput="window.handleAdminSearch(this.value)"
+                            class="flex-1 bg-transparent text-xs sm:text-sm focus:outline-none text-white font-mono placeholder:text-slate-600 min-h-[24px]" />
                     </div>
 
                     <!-- TABLEAU RECAPITULATIF DES COMPTES CLIENTS -->
@@ -2143,9 +2395,18 @@ service cloud.firestore {
                                     window.appState.allProfiles.map(client => {
                                         const isActive = client.status === 'active' && client.subEnd > window.appState.virtualDate;
                                         const daysRemaining = client.subEnd ? Math.max(0, Math.ceil((client.subEnd - window.appState.virtualDate) / (1000 * 60 * 60 * 24))) : 0;
+                                        
+                                        // Utilisation réactive des avatars dans le tableau général
+                                        const avatarHTML = client.avatar 
+                                            ? `<img src="${client.avatar}" class="w-6 h-6 rounded-full object-cover border border-cyan-500/20" />`
+                                            : `<div class="w-6 h-6 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-[8px] text-slate-400 font-mono">${window.getClientName(client.email).charAt(0)}</div>`;
+
                                         return `
                                         <tr class="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors font-mono">
-                                          <td class="p-3 text-[11px] sm:text-xs text-slate-300 truncate max-w-[150px]" title="${client.email}">${client.email}</td>
+                                          <td class="p-3 text-[11px] sm:text-xs text-slate-300 truncate max-w-[150px] flex items-center gap-2" title="${client.email}">
+                                            ${avatarHTML}
+                                            <span class="truncate">${client.email}</span>
+                                          </td>
                                           <td class="p-4">
                                             <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase ${isActive ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-red-950/40 text-red-400 border border-red-500/20'}">
                                                 ${isActive ? 'Actif' : 'Inactif'}
@@ -2235,6 +2496,17 @@ service cloud.firestore {
         // L'administrateur sélectionne un client pour personnaliser ses tarifs
         window.adminChangePriceClient = (clientId) => {
             window.appState.selectedPriceClientId = clientId;
+            renderApp();
+        };
+
+        // Gérer les filtres de temps analytiques pour le Chiffre d'Affaires de l'Admin
+        window.updateFinanceYearFilter = (year) => {
+            window.appState.adminFinanceYearFilter = year;
+            renderApp();
+        };
+
+        window.updateFinanceMonthFilter = (month) => {
+            window.appState.adminFinanceMonthFilter = month;
             renderApp();
         };
 
@@ -2419,13 +2691,17 @@ service cloud.firestore {
             }
         };
 
-        // L'administrateur efface la notification d'information globale
+        // L'administrateur supprime définitivement la notification globale (avec la Corbeille)
         window.adminClearAnnouncement = async () => {
-            window.showCyberConfirm("Confirmez-vous le retrait de la notification globale active ?", async () => {
+            window.showCyberConfirm("Confirmez-vous la suppression de la notification globale active ?", async () => {
                 try {
                     const announceRef = doc(db, 'artifacts', appId, 'public', 'data', 'announcements', 'global');
                     await deleteDoc(announceRef);
-                    window.showToast("La notification globale a été retirée.");
+                    
+                    const textInput = document.getElementById('announcement-text');
+                    if(textInput) textInput.value = ""; // Vider également le formulaire de rédaction
+                    
+                    window.showToast("La notification globale a été supprimée.");
                 } catch(e) {
                     console.error(e);
                     window.showToast("Erreur lors de la suppression de la notification.", "error");
@@ -2462,7 +2738,7 @@ service cloud.firestore {
             try {
                 const quoteRef = doc(db, 'artifacts', appId, 'public', 'data', 'quotes', quoteId);
                 await updateDoc(quoteRef, { status: nextStatus });
-                window.showToast(`Demande de devis marquée comme : ${nextStatus}`);
+                window.showToast("Demande de devis traitée.");
             } catch(e) {
                 console.error(e);
                 window.showToast("Erreur de traitement du devis", "error");
@@ -2538,7 +2814,7 @@ service cloud.firestore {
                     status: nextStatus,
                     subEnd: subEnd
                 });
-                window.showToast(`Statut client modifié en: ${nextStatus}`);
+                window.showToast("Statut client mis à jour.");
             } catch(e) {
                 handlePermissionError(e);
                 window.showToast("Erreur modification", "error");
