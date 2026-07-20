@@ -229,8 +229,8 @@
         const db = getFirestore(app);
         const appId = "sesameouvretoi";
 
-        const ADMIN_EMAIL = "admin@sesame.com";
-        const ADMIN_SECRET_KEY = "SESAME-SECURE-2026"; 
+        const ADMIN_EMAIL = "dpstay.net";
+        const ADMIN_SECRET_KEY = "2026"; 
 
         // ==========================================
         // 2. CONFIGURATION DES SERVICES DISPONIBLES
@@ -238,9 +238,9 @@
         const SERVICES_DATA = [
             { 
                 id: 'stockage-cloud', 
-                name: 'Stockage Cloud Pro', 
-                description: 'Sauvegardez vos données d\'entreprise sur nos serveurs hautement sécurisés.', 
-                price: 15.00, 
+                name: 'PACK ASSISTANCE VIP & DÉPANNAGE', 
+                description: 'Prise en charge prioritaire de toutes vos demandes 24/7. Inclut le dépannage express, le remplacement de matériel défectueux et la récupération d\'accès.', 
+                price: 10.50, 
                 type: 'mensuel', 
                 durationDays: 30 
             },
@@ -254,17 +254,17 @@
             },
             { 
                 id: 'cdn-global', 
-                name: 'CDN Ultra-Rapide (Global)', 
-                description: 'Accélérez le chargement de votre site internet à travers le monde entier.', 
-                price: 180.00, 
+                name: 'PASS TV CINÉ & SPORT', 
+                description: 'Profitez des plus grandes compétitions sportives en direct et dun catalogue complet de films et séries à la demande.', 
+                price: 80.50, 
                 type: 'annuel', 
                 durationDays: 365 
             },
             { 
                 id: 'security-pack', 
-                name: 'Pack Sécurité & Pare-feu', 
-                description: 'Analyse automatique des menaces et protection DDoS continue.', 
-                price: 350.00, 
+                name: 'NOM DE DOMAINE SUR-MESURE', 
+                description: 'Réservez l\'adresse idéale pour votre site internet ou votre boutique en ligne (.com, .fr, .shop) avec renouvellement automatique.', 
+                price: 50.60, 
                 type: 'annuel', 
                 durationDays: 365 
             },
@@ -278,8 +278,8 @@
             },
             { 
                 id: 'ux-design', 
-                name: 'Design de Marque & UX complexe', 
-                description: 'Refonte d\'identité visuelle, logos, chartes graphiques et parcours utilisateurs [Remplir Devis]', 
+                name: 'CRÉATION DE SITE INTERNET', 
+                description: 'Création complète de votre site web (vitrine, e-commerce ou sur-mesure) : adapté à tous les écrans, optimisé pour le référencement naturel (SEO) et clé en main. [Remplir Devis]', 
                 price: 0, 
                 type: 'devis', 
                 durationDays: 30 
@@ -1291,10 +1291,10 @@
                 
                 <!-- Astuces de démonstration simples -->
                 <div class="mb-4 p-2 bg-slate-950/80 border border-slate-800 rounded text-[11px] font-mono leading-relaxed text-slate-400">
-                    <p class="text-cyan-400 font-bold mb-1">💡 Comptes de Test (Démo) :</p>
+                    <p class="text-cyan-400 font-bold mb-1">🔒 Accès restreint </p>
                     ${authRole === 'admin' 
-                        ? `Utiliser <span class="text-purple-300">admin@sesame.com</span> (Le mot de passe de votre choix pour l'inscription initiale). Clé : <span class="text-purple-300">SESAME-SECURE-2026</span>` 
-                        : `Créez n'importe quel compte client de votre choix !`
+                        ? `Cet espace est réservé aux utilisateurs <span class="text-purple-300">admin</span> Toute tentative d'accès non autorisée est enregistrée au <span class="text-purple-300">base de données</span>` 
+                        : `En cas d'oubli de vos identifiants, contactez votre administrateur réseau ou le support technique`
                     }
                 </div>
                 
@@ -1323,7 +1323,7 @@
                       value="${email}"
                       oninput="window.handleAuthInput('email', this.value)"
                       class="w-full bg-slate-950 border ${authRole === 'admin' ? 'border-purple-900/40 focus:border-purple-500 focus:ring-purple-500' : 'border-slate-700 focus:border-cyan-500 focus:ring-cyan-500'} rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-1 transition-all font-mono"
-                      placeholder="${authRole === 'admin' ? 'admin@sesame.com' : 'agent@matrix.net'}" />
+                      placeholder="${authRole === 'admin' ? 'vous.nêtes-pas@autorisé' : 'nom.prenom@gmail.com'}" />
                   </div>
 
                   <!-- Clé d'activation Admin visible uniquement sur l'inscription admin -->
@@ -1346,7 +1346,7 @@
                         value="${password}"
                         oninput="window.handleAuthInput('password', this.value)"
                         class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-4 pr-10 py-2.5 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all font-mono"
-                        placeholder="••••••••" />
+                        placeholder="xxxxxxxx" />
                       <button type="button" onclick="window.togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
                         <i data-lucide="${showPassword ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>
                       </button>
