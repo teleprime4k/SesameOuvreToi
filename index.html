@@ -4043,7 +4043,7 @@ img, video, canvas, svg { max-width: 100%; }
                 return `<article style="margin-top:14px;padding:16px;border:1px solid rgba(34,211,238,.28);border-radius:16px;background:rgba(6,182,212,.06)">
                     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><strong style="color:#fff">✓ Votre licence Télé Prime4K</strong><div style="margin-top:7px;font-family:monospace;font-size:15px;color:#67e8f9;font-weight:900">${key}</div></div><span style="padding:5px 9px;border-radius:999px;border:1px solid rgba(52,211,153,.3);color:#6ee7b7;font-size:10px;font-weight:800">${statusLabel}</span></div>
                     <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;color:#94a3b8;font-size:11px"><span><b style="color:#e2e8f0">Titulaire :</b> ${window.escapeHTML(item.holderName || window.getClientName(window.appState.user?.email || '') || 'Client Sésame')}</span><span><b style="color:#e2e8f0">Durée :</b> ${window.escapeHTML(typeLabel[item.licenseType] || item.licenseType || '')}</span><span><b style="color:#e2e8f0">Expiration :</b> ${window.escapeHTML(expiryLabel)}</span><span><b style="color:#e2e8f0">Appareil :</b> ${deviceLabel}</span><span><b style="color:#e2e8f0">Origine :</b> ${originLabel}</span></div>
-                    <button type="button" class="tp-public-action" style="margin-top:12px" onclick="navigator.clipboard.writeText('${key}').then(()=>window.showToast('Clé de licence copiée.')).catch(()=>window.showToast('Impossible de copier la clé.','error'))">Copier la clé</button>
+                    <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"><button type="button" class="tp-public-action" onclick="navigator.clipboard.writeText('${key}').then(()=>window.showToast('Clé de licence copiée.')).catch(()=>window.showToast('Impossible de copier la clé.','error'))">Copier la clé</button>${status !== 'revoked' ? `<button type="button" class="tp-public-action" style="border-color:rgba(34,211,238,.35);color:#67e8f9" onclick="window.confirmTelePrimeClientDeviceReset('${key}')">Réinitialiser mon appareil</button>` : ''}</div>
                 </article>`;
             }).join('');
             return `<div style="margin-top:14px">${cards}</div>`;
@@ -4735,6 +4735,7 @@ img, video, canvas, svg { max-width: 100%; }
                 { id: 'client-payments', icon: 'history', label: 'Paiements' },
                 { action: 'teleprime-license', icon: 'key-round', label: 'Licence Télé Prime4K' },
                 { action: 'teleprime-connect', icon: 'tv', label: 'Connecter Télé Prime4K' },
+                { action: 'teleprime-reset', icon: 'refresh-cw', label: 'Réinitialiser mon appareil' },
                 { id: 'client-referrals', icon: 'gift', label: 'Parrainages' },
                 { id: 'billing-rules', icon: 'file-text', label: 'Règles de facturation' },
                 { id: 'news-section', icon: 'newspaper', label: 'Actualités' },
@@ -4882,6 +4883,7 @@ img, video, canvas, svg { max-width: 100%; }
                             <button onclick="window.mobileGoTo('client-payments')"><i data-lucide="credit-card"></i>Paiements</button>
                             <button onclick="window.openTelePrimeClientPurchase()"><i data-lucide="key-round"></i>Licence Télé Prime4K</button>
                             <button onclick="window.openTelePrimeDeviceLink()"><i data-lucide="tv"></i>Connecter Télé Prime4K</button>
+                            <button onclick="window.openTelePrimeDeviceReset()"><i data-lucide="refresh-cw"></i>Réinitialiser mon appareil</button>
                             <button onclick="window.mobileGoTo('news-section')"><i data-lucide="newspaper"></i>Actualités${unreadNewsCount ? `<span class="ml-auto rounded-full bg-purple-600 px-2 py-0.5 text-[9px] text-white">${unreadNewsCount}</span>` : ''}</button>
                             <button onclick="window.mobileGoTo('community-section')"><i data-lucide="users"></i>Groupe Sésame</button>
                             <button onclick="window.mobileGoTo('client-support')"><i data-lucide="headphones"></i>Support</button>
@@ -4925,6 +4927,7 @@ img, video, canvas, svg { max-width: 100%; }
                                 <button class="client-quick" onclick="window.mobileGoTo('client-support')"><span><i data-lucide="headphones"></i></span><span><b>Contacter le support</b><small>Notre équipe est disponible.</small></span><i data-lucide="chevron-right"></i></button>
                                 <button class="client-quick" onclick="window.openTelePrimeClientPurchase()"><span><i data-lucide="key-round"></i></span><span><b>Licence Télé Prime4K</b><small>Acheter une licence de 1 à 5 ans ou À vie.</small></span><i data-lucide="chevron-right"></i></button>
                                 <button class="client-quick" onclick="window.openTelePrimeDeviceLink()"><span><i data-lucide="tv"></i></span><span><b>Connecter Télé Prime4K</b><small>Connecter votre télévision avec l’ID appareil et la clé temporaire.</small></span><i data-lucide="chevron-right"></i></button>
+                                <button class="client-quick" onclick="window.openTelePrimeDeviceReset()"><span><i data-lucide="refresh-cw"></i></span><span><b>Réinitialiser mon appareil</b><small>Dissocier l’appareil lié à votre licence Télé Prime4K.</small></span><i data-lucide="chevron-right"></i></button>
                                 <button class="client-quick" onclick="window.openClientMobileRenewalServices()"><span><i data-lucide="refresh-cw"></i></span><span><b>Renouvellement</b><small>${clientRenewalCount ? `${clientRenewalCount} service${clientRenewalCount > 1 ? 's' : ''} à renouveler` : 'Aucun renouvellement nécessaire'}</small></span><i data-lucide="chevron-right"></i></button>
                             </div>
                             <div id="billing-rules-dashboard-slot" class="client-billing-slot">
@@ -6421,7 +6424,7 @@ img, video, canvas, svg { max-width: 100%; }
                             <button type="button" onclick="window.closeMobileShortcuts()" class="w-10 h-10 rounded-xl bg-slate-900 text-slate-400 flex items-center justify-center"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                         <div class="mobile-shortcut-grid grid grid-cols-3 gap-2">
-                            ${mobileAllShortcuts.map(item => { const badgeCount = item.id === 'news-section' ? unreadNewsCount : item.id === 'community-section' && !isAdmin && communityJoined ? unreadPeerMessages.length : 0; const action = item.action === 'profile' ? 'window.closeMobileShortcuts();window.openMyPersonalInformation()' : item.action === 'logout' ? 'window.closeMobileShortcuts();window.handleLogout()' : item.action === 'teleprime-license' ? 'window.closeMobileShortcuts();window.openTelePrimeClientPurchase()' : item.action === 'teleprime-connect' ? 'window.closeMobileShortcuts();window.openTelePrimeDeviceLink()' : `window.mobileGoTo('${item.id}')`; return `<button type="button" onclick="${action}" class="relative p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 flex flex-col items-center justify-center gap-2 text-center text-[10px] font-bold active:border-cyan-500 active:text-cyan-300">${badgeCount ? `<span class="absolute top-1.5 right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[18px] font-black animate-pulse">${badgeCount > 99 ? '99+' : badgeCount}</span>` : ''}<i data-lucide="${item.icon}" class="w-5 h-5 ${item.action === 'logout' ? 'text-red-400' : 'text-cyan-400'}"></i><span>${item.label}</span></button>`; }).join('')}
+                            ${mobileAllShortcuts.map(item => { const badgeCount = item.id === 'news-section' ? unreadNewsCount : item.id === 'community-section' && !isAdmin && communityJoined ? unreadPeerMessages.length : 0; const action = item.action === 'profile' ? 'window.closeMobileShortcuts();window.openMyPersonalInformation()' : item.action === 'logout' ? 'window.closeMobileShortcuts();window.handleLogout()' : item.action === 'teleprime-license' ? 'window.closeMobileShortcuts();window.openTelePrimeClientPurchase()' : item.action === 'teleprime-connect' ? 'window.closeMobileShortcuts();window.openTelePrimeDeviceLink()' : item.action === 'teleprime-reset' ? 'window.closeMobileShortcuts();window.openTelePrimeDeviceReset()' : `window.mobileGoTo('${item.id}')`; return `<button type="button" onclick="${action}" class="relative p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 flex flex-col items-center justify-center gap-2 text-center text-[10px] font-bold active:border-cyan-500 active:text-cyan-300">${badgeCount ? `<span class="absolute top-1.5 right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[18px] font-black animate-pulse">${badgeCount > 99 ? '99+' : badgeCount}</span>` : ''}<i data-lucide="${item.icon}" class="w-5 h-5 ${item.action === 'logout' ? 'text-red-400' : 'text-cyan-400'}"></i><span>${item.label}</span></button>`; }).join('')}
                         </div>
                     </div>
                 </div>
@@ -6929,6 +6932,95 @@ img, video, canvas, svg { max-width: 100%; }
             if (clientWorkspaceTitle) clientWorkspaceTitle.textContent = 'Identifiants confidentiels';
             clientHome?.querySelectorAll('.client-nav button').forEach(button => button.classList.remove('active'));
             panel.querySelectorAll('[data-copy-credential]').forEach(button => button.addEventListener('click', () => window.copyToClipboard(decodeURIComponent(button.dataset.copyCredential || ''))));
+            requestAnimationFrame(() => { lucide.createIcons({ root: clientWorkspace }); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+        };
+
+        window.getTelePrimeClientLicenses = () => Array.isArray(window.appState.profile?.telePrimeLicenses)
+            ? window.appState.profile.telePrimeLicenses
+            : [];
+
+        window.confirmTelePrimeClientDeviceReset = (licenseKey) => {
+            if (window.appState.isAdmin || !window.appState.profile) return;
+            const key = String(licenseKey || '').trim().toUpperCase();
+            if (!key) return;
+            window.showCyberConfirm(
+                `Réinitialiser l’appareil associé à la licence ${key} ? La licence et sa durée restante seront conservées.`,
+                () => window.resetTelePrimeClientDevice(key)
+            );
+        };
+
+        window.resetTelePrimeClientDevice = async (licenseKey) => {
+            const key = String(licenseKey || '').trim().toUpperCase();
+            const currentUser = auth.currentUser;
+            if (!currentUser || !window.appState.profile || window.appState.isAdmin) {
+                window.showToast('Votre session Sésame a expiré. Reconnectez-vous.', 'error');
+                return;
+            }
+            const button = document.querySelector(`[data-client-reset-license="${CSS.escape(key)}"]`);
+            try {
+                if (button) button.disabled = true;
+                const idToken = await currentUser.getIdToken(true);
+                const response = await fetch('https://teleprime4k-licences-api.teleprime4k.workers.dev/v1/license/reset-device-client', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                    body: JSON.stringify({ licenseKey: key })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result?.ok) throw new Error(result?.message || 'Réinitialisation impossible.');
+
+                const currentLicenses = window.getTelePrimeClientLicenses();
+                const nextLicenses = currentLicenses.map(item => String(item?.licenseKey || '').toUpperCase() === key
+                    ? { ...item, deviceName: null, lastValidationAt: null, status: String(result?.license?.status || item.status || 'pending') }
+                    : item
+                );
+                const profileId = String(window.appState.profile?.id || currentUser.uid || '');
+                if (profileId) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', profileId), { telePrimeLicenses: nextLicenses });
+                }
+                window.appState.profile.telePrimeLicenses = nextLicenses;
+                window.showToast('Appareil réinitialisé. Vous pouvez utiliser cette licence sur un nouvel appareil.');
+                window.openTelePrimeDeviceReset();
+            } catch (error) {
+                console.error('Télé Prime4K client reset error:', error);
+                window.showToast(error?.message || 'Impossible de réinitialiser l’appareil.', 'error');
+            } finally {
+                if (button) button.disabled = false;
+            }
+        };
+
+        window.openTelePrimeDeviceReset = () => {
+            if (window.appState.isAdmin || !window.appState.profile) return;
+            const licenses = window.getTelePrimeClientLicenses();
+            const clientHome = document.getElementById('client-home');
+            const clientOverview = document.getElementById('client-overview');
+            const clientWorkspace = document.getElementById('client-workspace');
+            const clientWorkspaceBody = document.getElementById('client-workspace-body');
+            const clientWorkspaceTitle = document.getElementById('client-workspace-title');
+            if (!clientWorkspace || !clientWorkspaceBody) return;
+
+            const cards = licenses.length ? licenses.map(item => {
+                const key = window.escapeHTML(String(item?.licenseKey || ''));
+                const status = String(item?.status || 'pending');
+                const revoked = status === 'revoked';
+                const device = item?.deviceName ? window.escapeHTML(item.deviceName) : 'Vérification effectuée au moment de la réinitialisation';
+                return `<article class="rounded-2xl border border-cyan-500/25 bg-[#081827] p-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0"><strong class="block text-xs text-white">Licence Télé Prime4K</strong><div class="mt-1 break-all font-mono text-sm font-black text-cyan-300">${key}</div><div class="mt-2 text-[10px] text-slate-400">Appareil : <span class="text-slate-300">${device}</span></div></div>
+                        <button type="button" data-client-reset-license="${key}" onclick="window.confirmTelePrimeClientDeviceReset('${key}')" ${revoked ? 'disabled' : ''} class="min-h-[42px] shrink-0 rounded-xl border border-cyan-500/35 bg-cyan-950/40 px-4 text-[10px] font-black uppercase text-cyan-200 hover:bg-cyan-900/50 disabled:cursor-not-allowed disabled:opacity-40">${revoked ? 'Licence révoquée' : 'Réinitialiser mon appareil'}</button>
+                    </div>
+                </article>`;
+            }).join('') : `<div class="rounded-2xl border border-slate-700 bg-slate-950/50 p-5 text-center text-xs text-slate-400">Aucune licence Télé Prime4K n’est actuellement rattachée à votre compte.</div>`;
+
+            const panel = document.createElement('div');
+            panel.className = 'grid gap-4';
+            panel.innerHTML = `<section class="rounded-2xl border border-cyan-500/35 bg-[#0b182b] p-4 sm:p-5"><div class="flex items-start gap-3"><span class="rounded-xl border border-cyan-500/30 bg-cyan-950/50 p-2 text-cyan-300"><i data-lucide="refresh-cw" class="h-5 w-5"></i></span><div><strong class="block text-sm text-white">Réinitialiser mon appareil</strong><p class="mt-1 text-[10px] leading-relaxed text-slate-400">Cette action dissocie uniquement l’appareil actuellement lié à la licence sélectionnée. <b class="text-emerald-300">La clé, l’activation et la durée restante sont conservées.</b> Vous pourrez ensuite utiliser la même licence sur un nouvel appareil.</p></div></div></section><div class="grid gap-3">${cards}</div>`;
+
+            clientWorkspaceBody.replaceChildren(panel);
+            clientOverview?.classList.add('hidden');
+            clientWorkspace.classList.remove('hidden');
+            window.appState.clientActiveTool = 'client-teleprime-reset';
+            if (clientWorkspaceTitle) clientWorkspaceTitle.textContent = 'Réinitialiser mon appareil';
+            clientHome?.querySelectorAll('.client-nav button').forEach(button => button.classList.toggle('active', button.getAttribute('onclick')?.includes('openTelePrimeDeviceReset')));
             requestAnimationFrame(() => { lucide.createIcons({ root: clientWorkspace }); window.scrollTo({ top: 0, behavior: 'smooth' }); });
         };
 
@@ -10379,5 +10471,7 @@ window.openTelePrimeLicenseConsole = openConsole;
 install();
 
 </script>
+
+<!-- Sésame V6.2 - Réinitialisation appareil Télé Prime4K côté client (PC + mobile) -->
 </body>
 </html>
