@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Sésame V6.4 : pièces jointes images + URLs cliquables dans la messagerie support -->
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -1322,6 +1323,11 @@ img, video, canvas, svg { max-width: 100%; }
         const db = getFirestore(app);
         const appId = "sesameouvretoi";
 
+        // V6.5 - stockage images support 100 % gratuit via Cloudflare Worker + D1.
+        // Déployer Worker_Sesame_V6_5_Support_Images_D1.js sous ce nom,
+        // ou remplacer cette URL par l’URL réelle donnée par Cloudflare.
+        const SUPPORT_MEDIA_API = "https://sesame-support-media.teleprime4k.workers.dev";
+
         const ADMIN_SESSION_ENDPOINT = "https://icy-snow-93d1.teleprime4k.workers.dev/api/admin-session";
         const CLOUDFLARE_AI_ASSISTANT_ENDPOINT = "https://icy-snow-93d1.teleprime4k.workers.dev/api/ai-assistant";
         const PROTOTYPE_CLIENT_ID = "__admin_client_prototype__";
@@ -1479,6 +1485,9 @@ img, video, canvas, svg { max-width: 100%; }
             selectedPeerClientId: '',
             adminSelectedPeerConversation: '',
             clientSupportDraft: '',
+            clientSupportAttachment: null,
+            adminSupportAttachments: {},
+            supportUploadInProgress: false,
             firestoreBlocked: false,
             perfStart: performance.now(),
             
@@ -3382,42 +3391,227 @@ img, video, canvas, svg { max-width: 100%; }
         };
 
         // ==========================================
+        // V6.5 - IMAGES GRATUITES CLOUDFLARE D1 + URLS CLIQUABLES
+        // ==========================================
+        const SUPPORT_IMAGE_MAX_SOURCE_BYTES = 5 * 1024 * 1024;
+        const SUPPORT_IMAGE_MAX_UPLOAD_BYTES = 950 * 1024;
+        const SUPPORT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+        window.renderSupportMessageText = (value = '') => {
+            const text = String(value ?? '');
+            const urlRegex = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+)/gi;
+            let output = '';
+            let lastIndex = 0;
+            for (const match of text.matchAll(urlRegex)) {
+                const index = match.index ?? 0;
+                output += window.escapeHTML(text.slice(lastIndex, index));
+                let visible = match[0];
+                let trailing = '';
+                while (/[.,!?;:]$/.test(visible)) {
+                    trailing = visible.slice(-1) + trailing;
+                    visible = visible.slice(0, -1);
+                }
+                const hrefRaw = visible.toLowerCase().startsWith('www.') ? `https://${visible}` : visible;
+                try {
+                    const parsed = new URL(hrefRaw);
+                    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Protocole refusé');
+                    const href = window.escapeHTML(parsed.href);
+                    output += `<a href="${href}" target="_blank" rel="noopener noreferrer nofollow" class="text-cyan-300 underline underline-offset-2 hover:text-cyan-200 break-all">${window.escapeHTML(visible)}</a>${window.escapeHTML(trailing)}`;
+                } catch (_) {
+                    output += window.escapeHTML(match[0]);
+                }
+                lastIndex = index + match[0].length;
+            }
+            output += window.escapeHTML(text.slice(lastIndex));
+            return output;
+        };
+
+        window.renderSupportAttachment = (attachment) => {
+            if (!attachment || attachment.type !== 'image' || !attachment.url) return '';
+            try {
+                const parsed = new URL(String(attachment.url));
+                if (parsed.protocol !== 'https:') return '';
+                const url = window.escapeHTML(parsed.href);
+                const name = window.escapeHTML(attachment.name || 'Image jointe');
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="mt-2 block max-w-[260px] sm:max-w-[320px] rounded-lg overflow-hidden border border-slate-700/80 bg-slate-950/70 hover:border-cyan-500/50 transition-colors" title="Ouvrir l’image en grand"><img src="${url}" alt="${name}" loading="lazy" class="block w-full max-h-64 object-contain bg-black/30"/><span class="block px-2 py-1.5 text-[8px] text-slate-400 truncate">📎 ${name} · cliquer pour agrandir</span></a>`;
+            } catch (_) {
+                return '';
+            }
+        };
+
+        const validateSupportImage = (file) => {
+            if (!file) return 'Aucune image sélectionnée.';
+            if (!SUPPORT_IMAGE_TYPES.has(String(file.type || '').toLowerCase())) return 'Format refusé. Utilisez JPG, PNG ou WEBP.';
+            if (Number(file.size || 0) > SUPPORT_IMAGE_MAX_SOURCE_BYTES) return 'Image trop volumineuse. Taille maximale avant compression : 5 Mo.';
+            if (Number(file.size || 0) <= 0) return 'Le fichier image est vide.';
+            return '';
+        };
+
+        const releaseSupportPreview = (entry) => {
+            if (entry?.previewUrl && String(entry.previewUrl).startsWith('blob:')) {
+                try { URL.revokeObjectURL(entry.previewUrl); } catch (_) {}
+            }
+        };
+
+        const supportAttachmentPreviewHTML = (entry, clearFn) => {
+            if (!entry?.file || !entry?.previewUrl) return '';
+            return `<div class="mb-2 flex items-center gap-2 rounded-lg border border-cyan-500/25 bg-cyan-950/25 p-2"><img src="${window.escapeHTML(entry.previewUrl)}" alt="Aperçu" class="h-12 w-12 rounded object-cover border border-slate-700"/><div class="min-w-0 flex-1"><p class="truncate text-[9px] font-bold text-cyan-200">${window.escapeHTML(entry.file.name || 'Image')}</p><p class="text-[8px] text-slate-500">${Math.max(1, Math.round((entry.file.size || 0) / 1024))} Ko · compression automatique à l’envoi</p></div><button type="button" onclick="${clearFn}" class="shrink-0 rounded border border-red-500/30 bg-red-950/40 p-2 text-red-300 hover:bg-red-900/60" title="Retirer l’image"><i data-lucide="x" class="h-3.5 w-3.5"></i></button></div>`;
+        };
+
+        window.selectClientSupportImage = (input) => {
+            const file = input?.files?.[0];
+            if (!file) return;
+            const error = validateSupportImage(file);
+            if (error) { input.value = ''; return window.showToast(error, 'error'); }
+            releaseSupportPreview(window.appState.clientSupportAttachment);
+            window.appState.clientSupportAttachment = { file, previewUrl: URL.createObjectURL(file) };
+            renderApp();
+        };
+
+        window.clearClientSupportImage = () => {
+            releaseSupportPreview(window.appState.clientSupportAttachment);
+            window.appState.clientSupportAttachment = null;
+            renderApp();
+        };
+
+        window.selectAdminSupportImage = (input) => {
+            const clientId = window.appState.adminSelectedClient;
+            const file = input?.files?.[0];
+            if (!clientId || !file) return;
+            const error = validateSupportImage(file);
+            if (error) { input.value = ''; return window.showToast(error, 'error'); }
+            releaseSupportPreview(window.appState.adminSupportAttachments[clientId]);
+            window.appState.adminSupportAttachments[clientId] = { file, previewUrl: URL.createObjectURL(file) };
+            renderApp();
+        };
+
+        window.clearAdminSupportImage = () => {
+            const clientId = window.appState.adminSelectedClient;
+            if (!clientId) return;
+            releaseSupportPreview(window.appState.adminSupportAttachments[clientId]);
+            delete window.appState.adminSupportAttachments[clientId];
+            renderApp();
+        };
+
+        const compressSupportImage = async (file) => {
+            const bitmap = await createImageBitmap(file);
+            const maxDimension = 1600;
+            const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+            canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+            const ctx = canvas.getContext('2d', { alpha: false });
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            try { bitmap.close(); } catch (_) {}
+
+            const toBlob = (quality) => new Promise((resolve, reject) => {
+                canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Compression image impossible.')), 'image/jpeg', quality);
+            });
+            let quality = 0.86;
+            let blob = await toBlob(quality);
+            while (blob.size > SUPPORT_IMAGE_MAX_UPLOAD_BYTES && quality > 0.42) {
+                quality -= 0.10;
+                blob = await toBlob(quality);
+            }
+            if (blob.size > SUPPORT_IMAGE_MAX_UPLOAD_BYTES) throw new Error('Cette image reste trop volumineuse après compression.');
+            return blob;
+        };
+
+        const getSupportFirebaseToken = async () => {
+            const user = auth.currentUser;
+            if (!user) throw new Error('Session utilisateur indisponible.');
+            return await user.getIdToken();
+        };
+
+        const uploadSupportImage = async (entry) => {
+            const file = entry?.file;
+            const error = validateSupportImage(file);
+            if (error) throw new Error(error);
+            const token = await getSupportFirebaseToken();
+            const compressed = await compressSupportImage(file);
+            const form = new FormData();
+            form.append('image', compressed, 'support.jpg');
+            form.append('originalName', String(file.name || 'Image').slice(0, 120));
+
+            const response = await fetch(`${SUPPORT_MEDIA_API}/v1/support-image`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: form
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data?.url || !data?.id) {
+                throw new Error(data?.error || 'Stockage image Cloudflare indisponible.');
+            }
+            return {
+                type: 'image',
+                url: String(data.url),
+                mediaId: String(data.id),
+                ownerUid: auth.currentUser?.uid || '',
+                name: file.name || 'Image',
+                size: Number(compressed.size || 0),
+                contentType: 'image/jpeg',
+                storageProvider: 'cloudflare-d1'
+            };
+        };
+
+        const tryDeleteOwnedSupportAttachment = async (message) => {
+            const attachment = message?.attachment;
+            if (!attachment?.mediaId || attachment.storageProvider !== 'cloudflare-d1' || !auth.currentUser) return;
+            try {
+                const token = await getSupportFirebaseToken();
+                await fetch(`${SUPPORT_MEDIA_API}/v1/support-image/${encodeURIComponent(attachment.mediaId)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            } catch (error) {
+                console.warn('Pièce jointe Cloudflare déjà absente ou non supprimable :', error?.message || error);
+            }
+        };
+
+        // ==========================================
         // 8. MODULES DE TCHAT SUPPORT
         // ==========================================
         window.submitChat = async (e) => {
             e.preventDefault();
             const input = document.getElementById('chat-input');
             const btn = document.getElementById('chat-btn');
-            if(!input || !btn) return;
+            if(!input || !btn || window.appState.supportUploadInProgress) return;
 
             const text = (input.value || window.appState.clientSupportDraft || '').trim();
-            if(!text) return;
+            const pendingAttachment = window.appState.clientSupportAttachment;
+            if(!text && !pendingAttachment?.file) return;
 
             input.disabled = true;
             btn.disabled = true;
-            // Vider immédiatement le brouillon avant que le listener Firebase
-            // reconstruise la messagerie avec l'ancienne valeur.
+            window.appState.supportUploadInProgress = true;
             window.appState.clientSupportDraft = '';
+            window.appState.clientSupportAttachment = null;
             input.value = '';
 
             try {
+                const attachment = pendingAttachment?.file ? await uploadSupportImage(pendingAttachment) : null;
                 const msgRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(msgRef, {
                     userId: window.appState.user.uid,
                     userEmail: window.appState.user.email,
                     text: text,
+                    ...(attachment ? { attachment } : {}),
                     sender: 'user',
                     readByAdmin: false,
                     readByClient: true,
-                    timestamp: window.getVirtualTimestamp() 
+                    timestamp: window.getVirtualTimestamp()
                 });
+                releaseSupportPreview(pendingAttachment);
             } catch (err) {
                 console.error(err);
-                // En cas d'échec seulement, rendre son texte au client.
                 window.appState.clientSupportDraft = text;
+                window.appState.clientSupportAttachment = pendingAttachment || null;
                 renderApp();
-                window.showToast("Erreur d'envoi du message.", "error");
+                window.showToast(err?.message || "Erreur d'envoi du message.", "error");
             } finally {
+                window.appState.supportUploadInProgress = false;
                 const currentInput = document.getElementById('chat-input');
                 const currentButton = document.getElementById('chat-btn');
                 if (currentInput) {
@@ -5479,21 +5673,30 @@ img, video, canvas, svg { max-width: 100%; }
                                         <div class="flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}">
                                             <span class="text-[8px] text-slate-500 mb-0.5 font-mono">${m.sender === 'user' ? `Vous (${window.getClientName(user.email)})` : 'Administrateur Sésame'} - ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                             <div class="p-2.5 rounded-lg max-w-[85%] leading-relaxed whitespace-pre-wrap break-words ${m.sender === 'user' ? 'bg-cyan-950/60 text-cyan-200 border border-cyan-500/20' : 'bg-purple-950/60 text-purple-200 border border-purple-500/20'}">
-                                                ${window.escapeHTML(m.text || '')}
+                                                ${window.renderSupportMessageText(m.text || '')}
+                                                ${window.renderSupportAttachment(m.attachment)}
                                             </div>
                                             ${m.editedAt ? `<span class="mt-1 text-[8px] text-slate-600 italic">Rectifié</span>` : ''}
                                             ${m.sender === 'user' ? `<button type="button" onclick="window.clientEditSupportMessage('${m.id}')" class="mt-1 inline-flex items-center gap-1 text-[8px] text-cyan-400 hover:text-cyan-300 uppercase font-bold"><i data-lucide="pencil" class="w-3 h-3"></i>Rectifier</button>` : ''}
                                         </div>
                                     `).join('')}
                             </div>
-                            <form onsubmit="window.submitChat(event)" class="flex gap-2 shrink-0 items-stretch">
-                                <input id="chat-input" type="text" value="${window.escapeHTML(window.appState.clientSupportDraft || '')}" placeholder="Écrivez un message au support..." autocomplete="off" spellcheck="true" lang="fr" autocorrect="on" autocapitalize="sentences" enterkeyhint="send"
-                                    oninput="window.appState.clientSupportDraft = this.value"
-                                    class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-cyan-500 text-white font-mono min-h-[38px]" />
-                                <button id="chat-btn" type="submit" class="p-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center">
-                                    <i data-lucide="send" class="w-4 h-4"></i>
-                                </button>
-                            </form>
+                            <div class="shrink-0">
+                                ${supportAttachmentPreviewHTML(window.appState.clientSupportAttachment, "window.clearClientSupportImage()")}
+                                <form onsubmit="window.submitChat(event)" class="flex gap-2 items-stretch">
+                                    <input id="client-support-image-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" onchange="window.selectClientSupportImage(this)" />
+                                    <button type="button" onclick="document.getElementById('client-support-image-input')?.click()" title="Joindre une image (5 Mo max)" class="p-2 bg-slate-950 hover:bg-slate-900 border border-slate-700 rounded-lg text-cyan-300 min-h-[38px] min-w-[38px] flex items-center justify-center">
+                                        <i data-lucide="paperclip" class="w-4 h-4"></i>
+                                    </button>
+                                    <input id="chat-input" type="text" value="${window.escapeHTML(window.appState.clientSupportDraft || '')}" placeholder="Écrivez un message ou joignez une image..." autocomplete="off" spellcheck="true" lang="fr" autocorrect="on" autocapitalize="sentences" enterkeyhint="send"
+                                        oninput="window.appState.clientSupportDraft = this.value"
+                                        class="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-cyan-500 text-white font-mono min-h-[38px]" />
+                                    <button id="chat-btn" type="submit" class="p-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white transition-colors min-h-[38px] min-w-[38px] flex items-center justify-center">
+                                        <i data-lucide="send" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                                <p class="mt-1 text-[8px] text-slate-600">Images JPG, PNG, WEBP ou GIF · 5 Mo max · les liens http/https deviennent cliquables.</p>
+                            </div>
                         </div>
                         ` : ''}
 
@@ -5924,7 +6127,8 @@ img, video, canvas, svg { max-width: 100%; }
                                                 <div class="flex flex-col ${m.sender === 'admin' ? 'items-end' : 'items-start'}">
                                                     <span class="text-[8px] text-slate-500">${m.sender === 'admin' ? 'Vous — Administrateur Sésame' : `${window.getClientName(m.userEmail)} — Client`}</span>
                                                     <div class="p-2 rounded bg-slate-900 text-slate-200 mt-0.5 max-w-[90%] whitespace-pre-wrap break-words">
-                                                        ${window.escapeHTML(m.text || '')}
+                                                        ${window.renderSupportMessageText(m.text || '')}
+                                                        ${window.renderSupportAttachment(m.attachment)}
                                                         ${(() => {
                                                             if (m.notificationType !== 'service_expired' || !ADMIN_EXPIRY_REACTIVATION_IDS.has(m.serviceId)) return '';
                                                             const targetProfile = window.appState.allProfiles.find(p => p.id === m.userId);
@@ -5946,12 +6150,18 @@ img, video, canvas, svg { max-width: 100%; }
                                             const aiLoading = window.appState.cloudflareAssistantLoadingClientId === clientId;
                                             return `<details class="mt-2 shrink-0 min-w-0 w-full rounded-lg bg-gradient-to-r from-purple-950/45 to-cyan-950/35 border border-purple-500/25 group overflow-hidden"><summary class="list-none cursor-pointer px-2.5 py-2 flex items-center justify-between gap-2 select-none min-w-0"><span class="min-w-0 truncate text-[9px] uppercase font-bold text-purple-300 flex items-center gap-1"><i data-lucide="cloud-cog" class="w-3.5 h-3.5 shrink-0"></i> Assistant IA Cloudflare</span><span class="shrink-0 flex items-center gap-1 text-[8px] text-slate-500"><span class="hidden sm:inline">Brouillons privés · aucun envoi automatique</span><i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open:rotate-180"></i></span></summary><div class="max-h-[42vh] sm:max-h-56 overflow-y-auto overscroll-contain border-t border-purple-500/20 px-2.5 py-2"><span class="mb-2 flex items-center gap-1 text-[8px] font-bold uppercase text-cyan-300"><i data-lucide="sparkles" class="h-3 w-3 shrink-0"></i> Assistance intelligente</span><div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5"><button type="button" onclick="window.askCloudflareAdminSupport('draft')" ${aiLoading ? 'disabled' : ''} class="min-h-[34px] rounded border border-cyan-500/30 bg-cyan-950 px-2 py-1.5 text-[8px] leading-tight text-cyan-200 disabled:opacity-50">Proposer une réponse</button><button type="button" onclick="window.askCloudflareAdminSupport('correct')" ${aiLoading ? 'disabled' : ''} class="min-h-[34px] rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[8px] leading-tight text-slate-300 disabled:opacity-50">Corriger mon brouillon</button><button type="button" onclick="window.askCloudflareAdminSupport('rewrite')" ${aiLoading ? 'disabled' : ''} class="min-h-[34px] rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[8px] text-slate-300 disabled:opacity-50">Reformuler</button><button type="button" onclick="window.askCloudflareAdminSupport('summary')" ${aiLoading ? 'disabled' : ''} class="min-h-[34px] rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-[8px] text-slate-300 disabled:opacity-50">Résumer</button></div>${aiLoading ? `<div class="mt-2 flex items-center gap-2 rounded border border-cyan-500/20 bg-cyan-950/30 px-2 py-2 text-[8px] text-cyan-200"><i data-lucide="loader-circle" class="h-3.5 w-3.5 shrink-0 animate-spin"></i><span class="min-w-0">L’assistant prépare votre brouillon…</span></div>` : ''}${aiOutput ? `<div class="mt-2 min-w-0 rounded-lg border border-purple-500/30 bg-slate-950/80 p-2"><span class="block text-[8px] font-bold uppercase text-purple-300">${aiOutput.action === 'summary' ? 'Résumé privé' : 'Proposition à vérifier'}</span><p class="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-[9px] leading-relaxed text-slate-200">${window.escapeHTML(aiOutput.text)}</p>${aiOutput.action !== 'summary' ? `<button type="button" onclick="window.useCloudflareAdminDraft()" class="mt-2 min-h-[34px] w-full sm:w-auto rounded bg-purple-700 px-3 py-1.5 text-[8px] font-bold text-white hover:bg-purple-600">Utiliser ce brouillon</button>` : ''}</div>` : ''}</div></details>`;
                                         })()}
-                                        <form onsubmit="window.adminSendSupportMessage(event)" class="mt-2 pt-2 border-t border-slate-800 flex gap-1 font-mono shrink-0">
-                                            <input id="admin-chat-input" type="text" value="${window.escapeHTML(window.appState.adminSupportDrafts[window.appState.adminSelectedClient] || '')}" oninput="window.updateAdminSupportDraft(this.value)" placeholder="Répondre..." autocomplete="off" spellcheck="true" lang="fr" autocorrect="on" autocapitalize="sentences" enterkeyhint="send"
-                                                class="flex-1 bg-slate-900 border border-slate-800 rounded px-2.5 py-1 text-[11px] focus:outline-none focus:border-purple-500 text-white min-h-[30px]" />
-                                            <button type="button" onclick="window.correctAdminSupportReply()" title="Corriger les fautes courantes" class="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/30 px-2 py-1 rounded text-cyan-300 text-[9px] font-bold shrink-0 min-h-[30px] flex items-center gap-1"><i data-lucide="spell-check-2" class="w-4 h-4"></i><span class="hidden sm:inline">Corriger</span></button>
-                                            <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-2.5 py-1 rounded text-white text-[11px] font-bold shrink-0 min-h-[30px]">OK</button>
-                                        </form>
+                                        <div class="mt-2 pt-2 border-t border-slate-800 shrink-0">
+                                            ${supportAttachmentPreviewHTML(window.appState.adminSupportAttachments[window.appState.adminSelectedClient], "window.clearAdminSupportImage()")}
+                                            <form onsubmit="window.adminSendSupportMessage(event)" class="flex gap-1 font-mono">
+                                                <input id="admin-support-image-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" onchange="window.selectAdminSupportImage(this)" />
+                                                <button type="button" onclick="document.getElementById('admin-support-image-input')?.click()" title="Joindre une image (5 Mo max)" class="bg-slate-950 hover:bg-slate-900 border border-slate-700 px-2 py-1 rounded text-purple-300 shrink-0 min-h-[30px]"><i data-lucide="paperclip" class="w-4 h-4"></i></button>
+                                                <input id="admin-chat-input" type="text" value="${window.escapeHTML(window.appState.adminSupportDrafts[window.appState.adminSelectedClient] || '')}" oninput="window.updateAdminSupportDraft(this.value)" placeholder="Répondre ou joindre une image..." autocomplete="off" spellcheck="true" lang="fr" autocorrect="on" autocapitalize="sentences" enterkeyhint="send"
+                                                    class="flex-1 bg-slate-900 border border-slate-800 rounded px-2.5 py-1 text-[11px] focus:outline-none focus:border-purple-500 text-white min-h-[30px]" />
+                                                <button type="button" onclick="window.correctAdminSupportReply()" title="Corriger les fautes courantes" class="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/30 px-2 py-1 rounded text-cyan-300 text-[9px] font-bold shrink-0 min-h-[30px] flex items-center gap-1"><i data-lucide="spell-check-2" class="w-4 h-4"></i><span class="hidden sm:inline">Corriger</span></button>
+                                                <button type="submit" class="bg-purple-600 hover:bg-purple-500 px-2.5 py-1 rounded text-white text-[11px] font-bold shrink-0 min-h-[30px]">OK</button>
+                                            </form>
+                                            <p class="mt-1 text-[8px] text-slate-600">Images JPG, PNG, WEBP ou GIF · 5 Mo max · URLs http/https cliquables.</p>
+                                        </div>
                                     ` : `
                                         <p class="text-slate-500 text-[10px] italic font-mono text-center mt-20 font-sans">Sélectionnez un tchat client.</p>
                                     `}
@@ -7589,6 +7799,7 @@ img, video, canvas, svg { max-width: 100%; }
             if (!message || message.userId !== window.appState.adminSelectedClient) return;
             window.showCyberConfirm("Supprimer définitivement ce message pour le client et l’administrateur ?", async () => {
                 try {
+                    await tryDeleteOwnedSupportAttachment(message);
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', messageId));
                     window.showToast("Message définitivement supprimé.");
                 } catch (error) {
@@ -7605,7 +7816,10 @@ img, video, canvas, svg { max-width: 100%; }
             if (!messages.length) return window.showToast("Cette conversation est déjà vide.");
             window.showCyberConfirm(`Supprimer définitivement toute cette conversation (${messages.length} message${messages.length > 1 ? 's' : ''}) pour le client et l’administrateur ?`, async () => {
                 try {
-                    await Promise.all(messages.map(message => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', message.id))));
+                    await Promise.all(messages.map(async message => {
+                        await tryDeleteOwnedSupportAttachment(message);
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'messages', message.id));
+                    }));
                     delete window.appState.adminSupportDrafts[clientId];
                     delete window.appState.cloudflareAssistantOutputs[clientId];
                     delete window.appState.cloudflareAssistantOpenByClient[clientId];
@@ -7679,37 +7893,41 @@ img, video, canvas, svg { max-width: 100%; }
             e.preventDefault();
             const input = document.getElementById('admin-chat-input');
             const targetUserId = window.appState.adminSelectedClient;
-            if(!input || !targetUserId) return;
+            if(!input || !targetUserId || window.appState.supportUploadInProgress) return;
 
             const text = String(input.value || window.appState.adminSupportDrafts[targetUserId] || '').trim();
-            if(!text) return;
+            const pendingAttachment = window.appState.adminSupportAttachments[targetUserId];
+            if(!text && !pendingAttachment?.file) return;
 
-            // IMPORTANT : vider AVANT addDoc. Le listener Firebase peut relancer renderApp()
-            // pendant l'envoi ; si le brouillon n'est pas déjà supprimé, l'ancien texte revient.
             delete window.appState.adminSupportDrafts[targetUserId];
+            delete window.appState.adminSupportAttachments[targetUserId];
             input.value = '';
             input.disabled = true;
+            window.appState.supportUploadInProgress = true;
 
             try {
+                const attachment = pendingAttachment?.file ? await uploadSupportImage(pendingAttachment) : null;
                 const msgRef = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
                 await addDoc(msgRef, {
                     userId: targetUserId,
                     userEmail: window.appState.user?.email || 'Administrateur Sésame',
                     text: text,
+                    ...(attachment ? { attachment } : {}),
                     sender: 'admin',
                     senderName: 'Administrateur Sésame',
                     readByAdmin: true,
                     readByClient: false,
                     timestamp: window.getVirtualTimestamp ? window.getVirtualTimestamp() : Date.now()
                 });
+                releaseSupportPreview(pendingAttachment);
             } catch(error) {
                 console.error(error);
-                // Seulement en cas d'échec, remettre le texte pour ne rien perdre.
                 window.appState.adminSupportDrafts[targetUserId] = text;
-                const restored = document.getElementById('admin-chat-input');
-                if (restored) restored.value = text;
-                window.showToast("Erreur d'envoi", "error");
+                if (pendingAttachment) window.appState.adminSupportAttachments[targetUserId] = pendingAttachment;
+                renderApp();
+                window.showToast(error?.message || "Erreur d'envoi", "error");
             } finally {
+                window.appState.supportUploadInProgress = false;
                 const currentInput = document.getElementById('admin-chat-input');
                 if (currentInput) {
                     currentInput.disabled = false;
