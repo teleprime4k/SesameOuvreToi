@@ -5979,11 +5979,11 @@ img, video, canvas, svg { max-width: 100%; }
                                 <button type="button" onclick="window.loadTeleprime4KSiteSettings(true)" class="min-h-[40px] rounded-xl border border-cyan-500/35 bg-cyan-950/30 px-4 text-[10px] font-black uppercase text-cyan-300">Actualiser</button>
                             </div>
                         </div>
-                        <div class="mt-4 rounded-xl border border-amber-500/20 bg-amber-950/15 p-3 text-[10px] text-amber-200">Les applications intégrées au HTML 4K restent disponibles en secours. Les nouvelles applications publiées ici sont ajoutées automatiquement au carrousel 4K.</div>
+                        <div class="mt-4 rounded-xl border border-amber-500/20 bg-amber-950/15 p-3 text-[10px] text-amber-200">Toutes les applications, y compris celles d’origine du HTML 4K, peuvent être modifiées, masquées, réordonnées ou supprimées depuis ce panneau.</div>
                         <div id="tp4k-admin-app-list" class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2"></div>
                         <div class="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <span id="tp4k-admin-status" class="text-[10px] text-slate-400">Chargement de la configuration…</span>
-                            <button type="button" onclick="window.saveTeleprime4KSiteSettings()" class="min-h-[42px] rounded-xl bg-emerald-600 px-5 text-[10px] font-black uppercase text-white shadow-lg shadow-emerald-950/30">Enregistrer les URL</button>
+                            <button type="button" onclick="window.saveTeleprime4KSiteSettings()" class="min-h-[42px] rounded-xl bg-emerald-600 px-5 text-[10px] font-black uppercase text-white shadow-lg shadow-emerald-950/30">Enregistrer les applications</button>
                         </div>
                     </section>
 
@@ -7012,164 +7012,123 @@ img, video, canvas, svg { max-width: 100%; }
         };
 
 
-        // ===== Gestion complète du site Teleprime4K depuis Sésame =====
+        // ===== Gestion complète de TOUTES les applications Teleprime4K depuis Sésame =====
         const TELEPRIME4K_SITE_CONFIG_REF = () => doc(db, 'artifacts', appId, 'public', 'data', 'config', 'teleprime4kSite');
-        const TP4K_DEFAULT_DOWNLOADS = [{"name": "Télé Prime4K", "downloadLink": "https://e.pcloud.link/publink/show?code=XZafo77Z6b7T7E3ghRYWPizGa4ykmmfhvp9V"}, {"name": "4K", "downloadLink": "http://go.aftvnews.com/8415512"}, {"name": "ibo_TV v2.3.7", "downloadLink": "https://e.pcloud.link/publink/show?code=XZk1LoZDFBY9YNUzyF1XklGACXj67Y3QvPy"}, {"name": "TiviMate", "downloadLink": "http://go.aftvnews.com/272483"}, {"name": "Tivi Gold", "downloadLink": "http://go.aftvnews.com/2072828"}, {"name": "Saga Stalker", "downloadLink": "https://www.mediafire.com/file/2ssbvblhyrtnonn/Saga_Stalker.apk/file"}, {"name": "Ibo Player Pro", "downloadLink": "https://iboproapp.com/ibopro.apk"}, {"name": "Gold v.1", "downloadLink": "http://go.aftvnews.com/9105073"}, {"name": "Saga v1.0.49", "downloadLink": "http://go.aftvnews.com/3483955"}, {"name": "Stalker Mag", "downloadLink": "http://go.aftvnews.com/5604791"}, {"name": "Ibo Golden", "downloadLink": "http://go.aftvnews.com/2925946"}, {"name": "Surfshark VPN illimité", "downloadLink": "https://www.mediafire.com/file/e992r3yre9ukv8h/Surfshark.Android.apk/file"}, {"name": "Proton VPN illimité", "downloadLink": "https://www.mediafire.com/file/31ty2f1m8zj93cq/ProtonVPN.Android_TV.apk/file"}, {"name": "Google Play", "downloadLink": "https://www.mediafire.com/file/kfwukk0i574vdsc/Google_Playa-Andoid.apk/file"}, {"name": "Downloader by AFTVnews", "downloadLink": "https://www.mediafire.com/file/hdqtj1q80cf041f/.downloader-2-0-1-ForGoogleAndroid.apk/file"}, {"name": "Uptodown", "downloadLink": "https://www.mediafire.com/file/j2u8oiba9pyj74y/uptodown-app-store.apk/file"}, {"name": "Gold Active Code v.1", "downloadLink": "http://go.aftvnews.com/4831204"}, {"name": "Golden Smart", "downloadLink": "http://go.aftvnews.com/2257663"}, {"name": "Box Ethernet", "downloadLink": "http://go.aftvnews.com/9663676"}, {"name": "Mon Apps Magic🪄", "downloadLink": "https://fr.ldplayer.net/home"}];
-        window.tp4kSiteManager = { downloads: {}, customApps: [] };
+        const TP4K_BUILTIN_APPS = [{"id": "builtin_1", "name": "Télé Prime4K", "category": "Users", "badge": "NOS DEUX ABONNEMENTS", "badgeColor": "#3b82f6", "downloadLink": "https://e.pcloud.link/publink/show?code=XZafo77Z6b7T7E3ghRYWPizGa4ykmmfhvp9V", "icon": "", "activationNotice": "version 1.3.36", "order": 1, "active": true, "builtin": true}, {"id": "builtin_2", "name": "4K", "category": "Users", "badge": "King Prime 🥇", "badgeColor": "#10b981", "downloadLink": "http://go.aftvnews.com/8415512", "icon": "", "activationNotice": "⚠️Fonctionne avec un VPN", "order": 2, "active": true, "builtin": true}, {"id": "builtin_3", "name": "ibo_TV v2.3.7", "category": "Users", "badge": "Gold Vibe🥈", "badgeColor": "#FF57DD", "downloadLink": "https://e.pcloud.link/publink/show?code=XZk1LoZDFBY9YNUzyF1XklGACXj67Y3QvPy", "icon": "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z", "activationNotice": "", "order": 3, "active": true, "builtin": true}, {"id": "builtin_4", "name": "TiviMate", "category": "Users", "badge": "COMPATIBLE AVEC NOS ABONNEMENTS", "badgeColor": "#FF0000", "downloadLink": "http://go.aftvnews.com/272483", "icon": "", "activationNotice": "⚠️ Activation obligatoire après installation", "order": 4, "active": true, "builtin": true}, {"id": "builtin_5", "name": "Tivi Gold", "category": "Users", "badge": "Gold Vibe🥈", "badgeColor": "#10b981", "downloadLink": "http://go.aftvnews.com/2072828", "icon": "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z", "activationNotice": "", "order": 5, "active": true, "builtin": true}, {"id": "builtin_6", "name": "Saga Stalker", "category": "Connect Mag", "badge": "King Prime🥇", "badgeColor": "#ef4444", "downloadLink": "https://www.mediafire.com/file/2ssbvblhyrtnonn/Saga_Stalker.apk/file", "icon": "M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z", "activationNotice": "", "order": 6, "active": true, "builtin": true}, {"id": "builtin_7", "name": "Ibo Player Pro", "category": "Users", "badge": "COMPATIBLE AVEC NOS ABONNEMENTS", "badgeColor": "#3b82f6", "downloadLink": "https://iboproapp.com/ibopro.apk", "icon": "", "activationNotice": "⚠️ Activation obligatoire après installation", "order": 7, "active": true, "builtin": true}, {"id": "builtin_8", "name": "Gold v.1", "category": "Users", "badge": "Gold Vibe🥈", "badgeColor": "#FF57DD", "downloadLink": "http://go.aftvnews.com/9105073", "icon": "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z", "activationNotice": "", "order": 8, "active": true, "builtin": true}, {"id": "builtin_9", "name": "Saga v1.0.49", "category": "Connect Code", "badge": "King Prime🥇", "badgeColor": "#f97316", "downloadLink": "http://go.aftvnews.com/3483955", "icon": "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4", "activationNotice": "", "order": 9, "active": true, "builtin": true}, {"id": "builtin_10", "name": "Surfshark VPN illimité", "category": "Sécurité VPN", "badge": "VPN PRO PAYANT", "badgeColor": "#10b981", "downloadLink": "https://www.mediafire.com/file/e992r3yre9ukv8h/Surfshark.Android.apk/file", "icon": "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", "activationNotice": "", "order": 10, "active": true, "builtin": true}, {"id": "builtin_11", "name": "Proton VPN illimité", "category": "Sécurité VPN", "badge": "VPN FREE", "badgeColor": "#ef4444", "downloadLink": "https://www.mediafire.com/file/31ty2f1m8zj93cq/ProtonVPN.Android_TV.apk/file", "icon": "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", "activationNotice": "", "order": 11, "active": true, "builtin": true}, {"id": "builtin_12", "name": "Google Play", "category": "Outil", "badge": "FREE", "badgeColor": "#3b82f6", "downloadLink": "https://www.mediafire.com/file/kfwukk0i574vdsc/Google_Playa-Andoid.apk/file", "icon": "", "activationNotice": "", "order": 12, "active": true, "builtin": true}, {"id": "builtin_13", "name": "Downloader by AFTVnews", "category": "Outil", "badge": "FREE", "badgeColor": "#ef4444", "downloadLink": "https://www.mediafire.com/file/hdqtj1q80cf041f/.downloader-2-0-1-ForGoogleAndroid.apk/file", "icon": "M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 0 1-1.125-1.125v-3.75ZM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-8.25ZM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 0 1-1.125-1.125v-2.25Z", "activationNotice": "", "order": 13, "active": true, "builtin": true}, {"id": "builtin_14", "name": "Uptodown", "category": "Outil", "badge": "FREE", "badgeColor": "#3b82f6", "downloadLink": "https://www.mediafire.com/file/j2u8oiba9pyj74y/uptodown-app-store.apk/file", "icon": "M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z", "activationNotice": "", "order": 14, "active": true, "builtin": true}];
+        window.tp4kSiteManager = { apps: [] };
 
         window.tp4kEsc = (value='') => window.escapeHTML ? window.escapeHTML(String(value)) : String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         window.tp4kValidUrl = (value, allowEmpty=false) => {
             value = String(value || '').trim();
             return (allowEmpty && !value) || /^https?:\/\//i.test(value);
         };
+        window.tp4kNormalizeApps = (remoteApps=[]) => {
+            const remote = Array.isArray(remoteApps) ? remoteApps : [];
+            const byId = new Map(remote.map(a => [a?.id, a]));
+            const merged = TP4K_BUILTIN_APPS.map(base => ({...base, ...(byId.get(base.id)||{}), builtin:true}));
+            remote.filter(a => a && !String(a.id||'').startsWith('builtin_')).forEach(a => merged.push({...a, builtin:false}));
+            return merged.map((a,i)=>({...a, order:Number(a.order)||i+1, active:a.active!==false}));
+        };
         window.renderTeleprime4KSiteManager = () => {
             const root = document.getElementById('tp4k-admin-app-list');
             if (!root) return;
-            const downloads = window.tp4kSiteManager.downloads || {};
-            const builtins = TP4K_DEFAULT_DOWNLOADS.map((app, index) => {
-                const url = downloads[app.name] || app.downloadLink || '';
-                return `<article class="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
-                    <div class="mb-2 flex items-center justify-between gap-2"><div><span class="block text-[10px] font-black uppercase tracking-wide text-cyan-300">${window.tp4kEsc(app.name)}</span><small class="text-[9px] text-slate-500">Application intégrée au HTML 4K</small></div><span class="rounded-full border border-cyan-500/25 px-2 py-1 text-[8px] font-black text-cyan-300">INTÉGRÉE</span></div>
-                    <input data-tp4k-app="${window.tp4kEsc(app.name)}" type="url" value="${window.tp4kEsc(url)}" spellcheck="false" class="w-full rounded-lg border border-slate-700 bg-[#07111f] px-3 py-2.5 text-[11px] text-white outline-none focus:border-cyan-400">
-                </article>`;
-            }).join('');
-            const custom = (window.tp4kSiteManager.customApps || []).slice().sort((a,b)=>(Number(a.order)||0)-(Number(b.order)||0)).map((app, index) => `
-                <article class="rounded-xl border ${app.active === false ? 'border-slate-800 opacity-60' : 'border-purple-500/25'} bg-slate-950/70 p-3">
+            const apps = (window.tp4kSiteManager.apps || []).slice().sort((a,b)=>(Number(a.order)||0)-(Number(b.order)||0));
+            root.innerHTML = apps.map(app => `
+                <article class="rounded-xl border ${app.active === false ? 'border-slate-800 opacity-60' : app.builtin ? 'border-cyan-500/25' : 'border-purple-500/25'} bg-slate-950/70 p-3">
                     <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0"><span class="block truncate text-[10px] font-black uppercase tracking-wide text-purple-300">${window.tp4kEsc(app.name || 'Sans nom')}</span><small class="text-[9px] text-slate-500">${window.tp4kEsc(app.category || 'Application')} · ordre ${Number(app.order)||0}</small></div>
+                        <div class="min-w-0"><span class="block truncate text-[10px] font-black uppercase tracking-wide ${app.builtin?'text-cyan-300':'text-purple-300'}">${window.tp4kEsc(app.name || 'Sans nom')}</span><small class="text-[9px] text-slate-500">${window.tp4kEsc(app.category || 'Application')} · ordre ${Number(app.order)||0}</small></div>
                         <span class="rounded-full border px-2 py-1 text-[8px] font-black ${app.active === false ? 'border-slate-600 text-slate-400' : 'border-emerald-500/30 text-emerald-300'}">${app.active === false ? 'MASQUÉE' : 'PUBLIÉE'}</span>
                     </div>
+                    <div class="mt-2 flex gap-2"><span class="rounded-md px-2 py-1 text-[8px] font-black text-white" style="background:${window.tp4kEsc(app.badgeColor||'#3b82f6')}">${window.tp4kEsc(app.badge||'SANS BADGE')}</span><span class="text-[8px] text-slate-500">${app.builtin?'APPLICATION D’ORIGINE':'APPLICATION AJOUTÉE'}</span></div>
                     <div class="mt-3 truncate text-[9px] text-slate-400">${window.tp4kEsc(app.downloadLink || '')}</div>
                     <div class="mt-3 grid grid-cols-2 gap-2">
                         <button type="button" onclick="window.openTeleprime4KAppEditor('${window.tp4kEsc(app.id)}')" class="min-h-[36px] rounded-lg border border-cyan-500/35 bg-cyan-950/25 text-[9px] font-black uppercase text-cyan-300">Modifier</button>
-                        <button type="button" onclick="window.toggleTeleprime4KCustomApp('${window.tp4kEsc(app.id)}')" class="min-h-[36px] rounded-lg border border-amber-500/35 bg-amber-950/20 text-[9px] font-black uppercase text-amber-300">${app.active === false ? 'Activer' : 'Désactiver'}</button>
-                        <button type="button" onclick="window.moveTeleprime4KCustomApp('${window.tp4kEsc(app.id)}',-1)" class="min-h-[34px] rounded-lg border border-slate-700 text-[9px] font-bold text-slate-300">↑ Monter</button>
-                        <button type="button" onclick="window.moveTeleprime4KCustomApp('${window.tp4kEsc(app.id)}',1)" class="min-h-[34px] rounded-lg border border-slate-700 text-[9px] font-bold text-slate-300">↓ Descendre</button>
-                        <button type="button" onclick="window.deleteTeleprime4KCustomApp('${window.tp4kEsc(app.id)}')" class="col-span-2 min-h-[34px] rounded-lg border border-red-500/35 bg-red-950/20 text-[9px] font-black uppercase text-red-300">Supprimer</button>
+                        <button type="button" onclick="window.toggleTeleprime4KApp('${window.tp4kEsc(app.id)}')" class="min-h-[36px] rounded-lg border border-amber-500/35 bg-amber-950/20 text-[9px] font-black uppercase text-amber-300">${app.active === false ? 'Activer' : 'Désactiver'}</button>
+                        <button type="button" onclick="window.moveTeleprime4KApp('${window.tp4kEsc(app.id)}',-1)" class="min-h-[34px] rounded-lg border border-slate-700 text-[9px] font-bold text-slate-300">↑ Monter</button>
+                        <button type="button" onclick="window.moveTeleprime4KApp('${window.tp4kEsc(app.id)}',1)" class="min-h-[34px] rounded-lg border border-slate-700 text-[9px] font-bold text-slate-300">↓ Descendre</button>
+                        <button type="button" onclick="window.deleteTeleprime4KApp('${window.tp4kEsc(app.id)}')" class="col-span-2 min-h-[34px] rounded-lg border border-red-500/35 bg-red-950/20 text-[9px] font-black uppercase text-red-300">Supprimer</button>
                     </div>
                 </article>`).join('');
-            root.innerHTML = builtins + custom;
-            requestAnimationFrame(() => { try { lucide.createIcons({root}); } catch(_) {} });
         };
 
-        window.loadTeleprime4KSiteSettings = async (showFeedback = false) => {
+        window.loadTeleprime4KSiteSettings = async (showFeedback=false) => {
             if (!window.appState?.isAdmin) return;
-            const status = document.getElementById('tp4k-admin-status');
+            const status=document.getElementById('tp4k-admin-status');
             try {
-                if (status) { status.textContent = 'Chargement…'; status.className = 'text-[10px] text-cyan-300'; }
-                const snap = await getDoc(TELEPRIME4K_SITE_CONFIG_REF());
-                const data = snap.exists() ? (snap.data() || {}) : {};
-                window.tp4kSiteManager.downloads = data.downloads && typeof data.downloads === 'object' ? data.downloads : {};
-                window.tp4kSiteManager.customApps = Array.isArray(data.customApps) ? data.customApps : [];
+                if(status) status.textContent='Chargement…';
+                const snap=await getDoc(TELEPRIME4K_SITE_CONFIG_REF());
+                const data=snap.exists()?(snap.data()||{}):{};
+                // Migration automatique V2 -> V3 : anciens downloads/customApps restent reconnus.
+                if (Array.isArray(data.apps)) window.tp4kSiteManager.apps=window.tp4kNormalizeApps(data.apps);
+                else {
+                    let legacy=TP4K_BUILTIN_APPS.map(a=>({...a, downloadLink:(data.downloads||{})[a.name]||a.downloadLink}));
+                    (Array.isArray(data.customApps)?data.customApps:[]).forEach(a=>legacy.push({...a,builtin:false}));
+                    window.tp4kSiteManager.apps=window.tp4kNormalizeApps(legacy);
+                }
                 window.renderTeleprime4KSiteManager();
-                if (status) { status.textContent = snap.exists() ? 'Configuration Teleprime4K chargée.' : 'Aucune configuration distante : valeurs HTML actuelles utilisées.'; status.className = 'text-[10px] text-emerald-300'; }
-            } catch (error) {
-                console.error('Chargement configuration Teleprime4K :', error);
+                if(status) {status.textContent='Toutes les applications Teleprime4K sont modifiables.';status.className='text-[10px] text-emerald-300';}
+            } catch(error) {
+                console.error(error);
+                window.tp4kSiteManager.apps=window.tp4kNormalizeApps([]);
                 window.renderTeleprime4KSiteManager();
-                if (status) { status.textContent = 'Impossible de charger la configuration distante.'; status.className = 'text-[10px] text-red-300'; }
-                if (showFeedback) window.showToast?.('Impossible de charger la configuration Teleprime4K.', 'error');
+                if(status) {status.textContent='Configuration distante indisponible : valeurs HTML affichées.';status.className='text-[10px] text-red-300';}
+                if(showFeedback) window.showToast?.('Impossible de charger la configuration Teleprime4K.','error');
             }
         };
 
         window.saveTeleprime4KSiteSettings = async () => {
             if (!window.appState?.isAdmin) return;
-            const status = document.getElementById('tp4k-admin-status');
-            const downloads = {...(window.tp4kSiteManager.downloads || {})};
-            let invalid = '';
-            document.querySelectorAll('#admin-teleprime4k-site [data-tp4k-app]').forEach(input => {
-                const value = String(input.value || '').trim();
-                if (!window.tp4kValidUrl(value)) { if (!invalid) invalid = input.dataset.tp4kApp || 'Application'; return; }
-                downloads[input.dataset.tp4kApp] = value;
-            });
-            if (invalid) return window.showToast?.(`URL invalide ou vide pour ${invalid}.`, 'error');
+            const status=document.getElementById('tp4k-admin-status');
             try {
-                if (status) { status.textContent = 'Enregistrement…'; status.className = 'text-[10px] text-cyan-300'; }
-                window.tp4kSiteManager.downloads = downloads;
-                await setDoc(TELEPRIME4K_SITE_CONFIG_REF(), { downloads, customApps: window.tp4kSiteManager.customApps || [], updatedAt: Date.now(), updatedBy: auth.currentUser?.uid || '' }, { merge: true });
-                if (status) { status.textContent = 'Configuration enregistrée. Le site Teleprime4K se mettra à jour automatiquement.'; status.className = 'text-[10px] text-emerald-300'; }
-                window.showToast?.('Configuration Teleprime4K enregistrée.');
-            } catch (error) {
-                console.error('Enregistrement configuration Teleprime4K :', error);
-                if (status) { status.textContent = 'Échec de l’enregistrement.'; status.className = 'text-[10px] text-red-300'; }
-                window.showToast?.(error?.message || 'Impossible d’enregistrer la configuration Teleprime4K.', 'error');
+                if(status) {status.textContent='Enregistrement…';status.className='text-[10px] text-cyan-300';}
+                const apps=(window.tp4kSiteManager.apps||[]).map(a=>({...a}));
+                await setDoc(TELEPRIME4K_SITE_CONFIG_REF(), {apps, schemaVersion:3, updatedAt:Date.now(), updatedBy:auth.currentUser?.uid||''}, {merge:true});
+                if(status) {status.textContent='Configuration enregistrée. Le site 4K appliquera les changements.';status.className='text-[10px] text-emerald-300';}
+                window.showToast?.('Applications Teleprime4K enregistrées.');
+            } catch(error) {
+                console.error(error); if(status) status.textContent='Échec de l’enregistrement.';
+                window.showToast?.(error?.message||'Impossible d’enregistrer.','error');
             }
         };
 
         window.openTeleprime4KAppEditor = (appId='') => {
-            if (!window.appState?.isAdmin) return;
-            const existing = (window.tp4kSiteManager.customApps || []).find(a => a.id === appId) || {};
+            if(!window.appState?.isAdmin) return;
+            const existing=(window.tp4kSiteManager.apps||[]).find(a=>a.id===appId)||{};
             document.getElementById('tp4k-app-editor-modal')?.remove();
-            const modal = document.createElement('div');
-            modal.id = 'tp4k-app-editor-modal';
-            modal.className = 'fixed inset-0 z-[180] flex items-center justify-center overflow-y-auto bg-slate-950/90 p-3 sm:p-5';
-            modal.innerHTML = `<div class="my-auto w-full max-w-2xl rounded-2xl border border-cyan-500/35 bg-[#07111f] shadow-2xl">
-                <div class="flex items-center justify-between border-b border-slate-800 p-4"><div><h3 class="text-base font-black text-white">${appId ? 'Modifier' : 'Ajouter'} une application</h3><p class="mt-1 text-[10px] text-slate-400">Cette carte sera publiée dans Applications TV📺 & ANDROID📱 Premium 💎.</p></div><button type="button" onclick="document.getElementById('tp4k-app-editor-modal')?.remove()" class="grid h-10 w-10 place-items-center rounded-xl border border-slate-700 text-slate-300"><i data-lucide="x"></i></button></div>
-                <div class="grid gap-3 p-4 sm:grid-cols-2">
-                    <label class="block"><span class="text-[9px] font-bold uppercase text-slate-400">Nom *</span><input id="tp4k-edit-name" maxlength="80" value="${window.tp4kEsc(existing.name||'')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="block"><span class="text-[9px] font-bold uppercase text-slate-400">Catégorie</span><input id="tp4k-edit-category" maxlength="50" value="${window.tp4kEsc(existing.category||'Application')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="block"><span class="text-[9px] font-bold uppercase text-slate-400">Badge</span><input id="tp4k-edit-badge" maxlength="40" value="${window.tp4kEsc(existing.badge||'NOUVEAU')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="block"><span class="text-[9px] font-bold uppercase text-slate-400">Couleur du badge</span><input id="tp4k-edit-color" type="color" value="${window.tp4kEsc(existing.badgeColor||'#3b82f6')}" class="mt-1 h-[42px] w-full rounded-xl border border-slate-700 bg-slate-950 p-1"></label>
-                    <label class="block sm:col-span-2"><span class="text-[9px] font-bold uppercase text-slate-400">URL de téléchargement *</span><input id="tp4k-edit-url" type="url" value="${window.tp4kEsc(existing.downloadLink||'')}" placeholder="https://..." class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="block sm:col-span-2"><span class="text-[9px] font-bold uppercase text-slate-400">URL image / logo</span><input id="tp4k-edit-icon" type="url" value="${window.tp4kEsc(existing.icon||'')}" placeholder="https://..." class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="block"><span class="text-[9px] font-bold uppercase text-slate-400">Version / notice</span><input id="tp4k-edit-notice" maxlength="80" value="${window.tp4kEsc(existing.activationNotice||'')}" placeholder="ex. version 2.0" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="block"><span class="text-[9px] font-bold uppercase text-slate-400">Ordre</span><input id="tp4k-edit-order" type="number" min="1" max="999" value="${Number(existing.order)||((window.tp4kSiteManager.customApps||[]).length+1)}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
-                    <label class="flex items-center gap-2 sm:col-span-2"><input id="tp4k-edit-active" type="checkbox" ${existing.active === false ? '' : 'checked'} class="h-4 w-4"><span class="text-[10px] font-bold text-emerald-300">Application visible sur le site 4K</span></label>
-                    <div class="grid grid-cols-2 gap-2 sm:col-span-2"><button type="button" onclick="document.getElementById('tp4k-app-editor-modal')?.remove()" class="min-h-[42px] rounded-xl border border-slate-700 text-xs font-bold text-slate-300">Annuler</button><button type="button" onclick="window.commitTeleprime4KAppEditor('${window.tp4kEsc(appId)}')" class="min-h-[42px] rounded-xl bg-cyan-600 text-xs font-black uppercase text-white">Enregistrer</button></div>
-                </div></div>`;
+            const modal=document.createElement('div'); modal.id='tp4k-app-editor-modal';
+            modal.className='fixed inset-0 z-[180] flex items-center justify-center overflow-y-auto bg-slate-950/90 p-3 sm:p-5';
+            modal.innerHTML=`<div class="my-auto w-full max-w-2xl rounded-2xl border border-cyan-500/35 bg-[#07111f] shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 p-4"><div><h3 class="text-base font-black text-white">${appId?'Modifier':'Ajouter'} une application</h3><p class="mt-1 text-[10px] text-slate-400">Nom, catégorie, badge, couleur, téléchargement, image/logo, version/notice et affichage.</p></div><button type="button" onclick="document.getElementById('tp4k-app-editor-modal')?.remove()" class="grid h-10 w-10 place-items-center rounded-xl border border-slate-700 text-slate-300">✕</button></div>
+            <div class="grid gap-3 p-4 sm:grid-cols-2">
+            <label><span class="text-[9px] font-bold uppercase text-slate-400">Nom *</span><input id="tp4k-edit-name" maxlength="80" value="${window.tp4kEsc(existing.name||'')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label><span class="text-[9px] font-bold uppercase text-slate-400">Catégorie</span><input id="tp4k-edit-category" maxlength="50" value="${window.tp4kEsc(existing.category||'Application')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label><span class="text-[9px] font-bold uppercase text-slate-400">Badge</span><input id="tp4k-edit-badge" maxlength="40" value="${window.tp4kEsc(existing.badge||'')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label><span class="text-[9px] font-bold uppercase text-slate-400">Couleur</span><input id="tp4k-edit-color" type="color" value="${window.tp4kEsc(existing.badgeColor||'#3b82f6')}" class="mt-1 h-[42px] w-full rounded-xl border border-slate-700 bg-slate-950 p-1"></label>
+            <label class="sm:col-span-2"><span class="text-[9px] font-bold uppercase text-slate-400">URL téléchargement *</span><input id="tp4k-edit-url" type="url" value="${window.tp4kEsc(existing.downloadLink||'')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label class="sm:col-span-2"><span class="text-[9px] font-bold uppercase text-slate-400">URL image / logo</span><input id="tp4k-edit-icon" type="url" value="${window.tp4kEsc(existing.icon||'')}" placeholder="Laisser vide pour conserver l’image d’origine" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label><span class="text-[9px] font-bold uppercase text-slate-400">Version / notice</span><input id="tp4k-edit-notice" maxlength="80" value="${window.tp4kEsc(existing.activationNotice||'')}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label><span class="text-[9px] font-bold uppercase text-slate-400">Ordre</span><input id="tp4k-edit-order" type="number" min="1" max="999" value="${Number(existing.order)||((window.tp4kSiteManager.apps||[]).length+1)}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-white"></label>
+            <label class="flex items-center gap-2 sm:col-span-2"><input id="tp4k-edit-active" type="checkbox" ${existing.active===false?'':'checked'}><span class="text-[10px] font-bold text-emerald-300">Visible sur le site 4K</span></label>
+            <div class="grid grid-cols-2 gap-2 sm:col-span-2"><button onclick="document.getElementById('tp4k-app-editor-modal')?.remove()" class="min-h-[42px] rounded-xl border border-slate-700 text-xs text-slate-300">Annuler</button><button onclick="window.commitTeleprime4KAppEditor('${window.tp4kEsc(appId)}')" class="min-h-[42px] rounded-xl bg-cyan-600 text-xs font-black text-white">Enregistrer</button></div>
+            </div></div>`;
             document.body.appendChild(modal);
-            requestAnimationFrame(() => { try { lucide.createIcons({root:modal}); } catch(_) {} });
         };
 
         window.commitTeleprime4KAppEditor = async (appId='') => {
-            const get = id => String(document.getElementById(id)?.value || '').trim();
-            const name = get('tp4k-edit-name'), downloadLink = get('tp4k-edit-url'), icon = get('tp4k-edit-icon');
-            if (!name) return window.showToast?.('Le nom de l’application est obligatoire.', 'error');
-            if (!window.tp4kValidUrl(downloadLink)) return window.showToast?.('URL de téléchargement invalide.', 'error');
-            if (icon && !window.tp4kValidUrl(icon)) return window.showToast?.('URL de l’image invalide.', 'error');
-            const apps = [...(window.tp4kSiteManager.customApps || [])];
-            const item = {
-                id: appId || ('app_' + Date.now().toString(36)),
-                name, category:get('tp4k-edit-category') || 'Application', badge:get('tp4k-edit-badge') || 'NOUVEAU',
-                badgeColor:get('tp4k-edit-color') || '#3b82f6', downloadLink, icon,
-                activationNotice:get('tp4k-edit-notice'), order:Math.max(1, Number(get('tp4k-edit-order')) || 1),
-                active: !!document.getElementById('tp4k-edit-active')?.checked
-            };
-            const idx = apps.findIndex(a => a.id === item.id);
-            if (idx >= 0) apps[idx] = item; else apps.push(item);
-            window.tp4kSiteManager.customApps = apps;
-            document.getElementById('tp4k-app-editor-modal')?.remove();
-            window.renderTeleprime4KSiteManager();
-            await window.saveTeleprime4KSiteSettings();
+            const get=id=>String(document.getElementById(id)?.value||'').trim();
+            const name=get('tp4k-edit-name'), url=get('tp4k-edit-url'), icon=get('tp4k-edit-icon');
+            if(!name) return window.showToast?.('Nom obligatoire.','error');
+            if(!window.tp4kValidUrl(url)) return window.showToast?.('URL de téléchargement invalide.','error');
+            if(icon&&!window.tp4kValidUrl(icon)) return window.showToast?.('URL image/logo invalide.','error');
+            const apps=[...(window.tp4kSiteManager.apps||[])];
+            const old=apps.find(a=>a.id===appId)||{};
+            const item={...old,id:appId||('app_'+Date.now().toString(36)),builtin:!!old.builtin,name,category:get('tp4k-edit-category')||'Application',badge:get('tp4k-edit-badge'),badgeColor:get('tp4k-edit-color')||'#3b82f6',downloadLink:url,icon,activationNotice:get('tp4k-edit-notice'),order:Math.max(1,Number(get('tp4k-edit-order'))||1),active:!!document.getElementById('tp4k-edit-active')?.checked};
+            const idx=apps.findIndex(a=>a.id===item.id); if(idx>=0) apps[idx]=item; else apps.push(item);
+            window.tp4kSiteManager.apps=apps; document.getElementById('tp4k-app-editor-modal')?.remove(); window.renderTeleprime4KSiteManager(); await window.saveTeleprime4KSiteSettings();
         };
-
-        window.toggleTeleprime4KCustomApp = async (id) => {
-            const app = (window.tp4kSiteManager.customApps || []).find(a => a.id === id);
-            if (!app) return;
-            app.active = app.active === false;
-            window.renderTeleprime4KSiteManager();
-            await window.saveTeleprime4KSiteSettings();
-        };
-        window.moveTeleprime4KCustomApp = async (id, direction) => {
-            const apps = (window.tp4kSiteManager.customApps || []).slice().sort((a,b)=>(Number(a.order)||0)-(Number(b.order)||0));
-            const i = apps.findIndex(a => a.id === id), j = i + Number(direction);
-            if (i < 0 || j < 0 || j >= apps.length) return;
-            [apps[i], apps[j]] = [apps[j], apps[i]];
-            apps.forEach((a, n) => a.order = n + 1);
-            window.tp4kSiteManager.customApps = apps;
-            window.renderTeleprime4KSiteManager();
-            await window.saveTeleprime4KSiteSettings();
-        };
-        window.deleteTeleprime4KCustomApp = (id) => {
-            const app = (window.tp4kSiteManager.customApps || []).find(a => a.id === id);
-            if (!app) return;
-            const remove = async () => {
-                window.tp4kSiteManager.customApps = (window.tp4kSiteManager.customApps || []).filter(a => a.id !== id);
-                window.renderTeleprime4KSiteManager();
-                await window.saveTeleprime4KSiteSettings();
-            };
-            if (window.showCyberConfirm) window.showCyberConfirm(`Supprimer l’application ${app.name} du site Teleprime4K ?`, remove);
-            else if (confirm(`Supprimer ${app.name} ?`)) remove();
-        };
+        window.toggleTeleprime4KApp = async id => {const a=(window.tp4kSiteManager.apps||[]).find(x=>x.id===id);if(!a)return;a.active=a.active===false;window.renderTeleprime4KSiteManager();await window.saveTeleprime4KSiteSettings();};
+        window.moveTeleprime4KApp = async (id,d) => {const a=(window.tp4kSiteManager.apps||[]).slice().sort((x,y)=>(+x.order||0)-(+y.order||0));const i=a.findIndex(x=>x.id===id),j=i+(+d);if(i<0||j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];a.forEach((x,n)=>x.order=n+1);window.tp4kSiteManager.apps=a;window.renderTeleprime4KSiteManager();await window.saveTeleprime4KSiteSettings();};
+        window.deleteTeleprime4KApp = id => {const a=(window.tp4kSiteManager.apps||[]).find(x=>x.id===id);if(!a)return;const run=async()=>{window.tp4kSiteManager.apps=(window.tp4kSiteManager.apps||[]).filter(x=>x.id!==id);window.renderTeleprime4KSiteManager();await window.saveTeleprime4KSiteSettings();};if(window.showCyberConfirm)window.showCyberConfirm(`Supprimer ${a.name} du site Teleprime4K ?`,run);else if(confirm(`Supprimer ${a.name} ?`))run();};
 
         window.mobileGoTo = (targetId) => {
             window.closeMobileShortcuts();
