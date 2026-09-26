@@ -2130,6 +2130,10 @@ img, video, canvas, svg { max-width: 100%; }
         });
 
         renderApp();
+        // Verrou d'inscription : empêche le listener Auth de lancer
+        // les lectures Firestore pendant la création initiale du profil.
+        let clientRegistrationInProgress = false;
+
         onAuthStateChanged(auth, async (currentUser) => {
             stopClientInactivityTimer();
             // Sécurité anti-login automatique après inscription
@@ -2146,6 +2150,13 @@ img, video, canvas, svg { max-width: 100%; }
             window.appState.firestoreBlocked = false; 
             window.appState.authLoading = false; 
             renderApp();
+
+            // submitAuth crée lui-même profiles/{uid}. Pendant cette courte phase,
+            // ne pas démarrer une seconde initialisation Firestore en parallèle.
+            if (currentUser && clientRegistrationInProgress) {
+                return;
+            }
+
 
             if (currentUser) {
                 const secureAdminRole = await resolveAdminRole(currentUser);
@@ -4059,6 +4070,9 @@ img, video, canvas, svg { max-width: 100%; }
                 if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
+                    // Firebase connecte immédiatement le nouveau compte : verrouiller
+                    // le listener AVANT createUser pour éviter la course Firestore.
+                    clientRegistrationInProgress = true;
                     const credential = await createUserWithEmailAndPassword(auth, email, password);
                     const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'profiles', credential.user.uid);
                     await setDoc(profileRef, {
@@ -4079,6 +4093,8 @@ img, video, canvas, svg { max-width: 100%; }
                         createdAt: Date.now(),
                         services: Object.fromEntries(SERVICES_DATA.map(s => [s.id, { status: 'inactive', subEnd: null, freeReactivationUsed: false }]))
                     }, { merge: true });
+                    // Le profil existe maintenant. La déconnexion peut être traitée normalement.
+                    clientRegistrationInProgress = false;
                     await signOut(auth);
                     
                     // Succès d'enregistrement, on bascule vers la vue connexion
@@ -4086,7 +4102,12 @@ img, video, canvas, svg { max-width: 100%; }
                     window.appState.authSuccessMessage = "Félicitations ! Votre compte client Sésame a bien été créé. Vous pouvez désormais vous connecter en toute sécurité.";
                     window.appState.password = ''; // On efface le mot de passe pour des raisons de sécurité
                 }
-            } catch (err) {
+             } catch (err) {
+                const wasRegistering = clientRegistrationInProgress;
+                clientRegistrationInProgress = false;
+                if (wasRegistering && auth.currentUser) {
+                    try { await signOut(auth); } catch (_) {}
+                }
                 window.appState.preventAutoLogin = false;
                 window.appState.authError = err.message.replace('Firebase: ', '');
                 window.appState.authSuccessMessage = '';
