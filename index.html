@@ -4131,6 +4131,13 @@ img, video, canvas, svg { max-width: 100%; }
             const needsUsername = serviceId === 'cdn-global';
             wrap?.classList.toggle('hidden', !needsUsername);
             if (input) input.required = needsUsername;
+
+            const submitButton = document.getElementById('subscription-onboarding-submit');
+            if (submitButton) {
+                submitButton.textContent = serviceId === 'none'
+                    ? 'Valider cette étape'
+                    : 'Rattacher mon abonnement à mon compte';
+            }
         };
 
         window.prepareSubscriptionAttachment = (event, isPrototype = false) => {
@@ -4140,6 +4147,14 @@ img, video, canvas, svg { max-width: 100%; }
             if (!selected) return window.showToast('Veuillez sélectionner une réponse.', 'error');
             if (selected === 'cdn-global' && !username) return window.showToast('Le Username du PASS TV CINÉ & SPORT est obligatoire.', 'error');
             window.appState.onboardingDraft = { serviceId: selected === 'none' ? '' : selected, username: selected === 'cdn-global' ? username : '', prototype: Boolean(isPrototype) };
+
+            // "Aucun abonnement" n'est pas une demande de rattachement :
+            // on valide directement l'étape et on ouvre l'espace client.
+            if (selected === 'none') {
+                return window.submitSubscriptionReactivation(isPrototype);
+            }
+
+            // Un abonnement existant conserve l'étape de vérification/rattachement.
             renderApp();
         };
 
@@ -4213,11 +4228,31 @@ img, video, canvas, svg { max-width: 100%; }
             } : { status: 'none', submittedAt: now, completedAt: now };
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'profiles', user.uid), { onboardingRequired: false, onboardingCompleted: true, subscriptionOnboarding: onboarding });
-                if (service) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-                    userId: user.uid, userEmail: user.email, sender: 'user', readByAdmin: false, timestamp: now,
-                    notificationType: 'subscription_link_request', serviceId: service.id,
-                    text: `[Rattachement d’abonnement] ${window.getClientName(user.email)} demande le rattachement et la réactivation de ${service.name}${draft.username ? ` — Username : ${draft.username}` : ''}.`
-                });
+                if (service) {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+                        userId: user.uid, userEmail: user.email, sender: 'user', readByAdmin: false, timestamp: now,
+                        notificationType: 'subscription_link_request', serviceId: service.id,
+                        text: `[Rattachement d’abonnement] ${window.getClientName(user.email)} demande le rattachement et la réactivation de ${service.name}${draft.username ? ` — Username : ${draft.username}` : ''}.`
+                    });
+                } else {
+                    // Notification Admin uniquement : aucune demande de rattachement n'est créée.
+                    // Le message rejoint le compteur de messages non lus déjà existant côté Admin.
+                    try {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+                            userId: user.uid,
+                            userEmail: user.email,
+                            sender: 'user',
+                            readByAdmin: false,
+                            readByClient: true,
+                            timestamp: now,
+                            notificationType: 'new_client_no_subscription',
+                            text: `🆕 Nouveau compte Sésame créé : ${window.getClientName(user.email)} a indiqué ne posséder encore aucun abonnement.`
+                        });
+                    } catch (notificationError) {
+                        // Ne jamais bloquer l'accès du nouveau client si seule la notification Admin échoue.
+                        console.error('Notification Admin nouveau client sans abonnement :', notificationError);
+                    }
+                }
                 window.appState.onboardingDraft = null;
                 window.appState.subscriptionCorrectionOpen = false;
                 window.showToast(service ? 'Demande envoyée à l’administrateur.' : 'Bienvenue dans votre espace client.');
@@ -4809,7 +4844,7 @@ img, video, canvas, svg { max-width: 100%; }
                             <label class="block text-[10px] uppercase text-cyan-300 mb-1">Username du PASS TV CINÉ & SPORT</label>
                             <input id="subscription-username" maxlength="100" autocomplete="off" placeholder="Exemple : client_sport_123" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-cyan-500" />
                         </div>
-                        <button class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-white font-bold uppercase text-xs">${'Rattacher mon abonnement à mon compte'}</button>
+                        <button id="subscription-onboarding-submit" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-white font-bold uppercase text-xs">${'Rattacher mon abonnement à mon compte'}</button>
                     </form>` : `
                     <div class="space-y-4">
                         <div class="p-4 rounded-xl bg-slate-950 border border-slate-800"><span class="block text-[9px] uppercase text-slate-500 mb-1">Étape 2 · Vérification</span><strong class="text-white text-sm">${selectedService ? selectedService.name : 'Aucun abonnement existant'}</strong>${draft.username ? `<p class="text-xs text-cyan-300 mt-2">Username : <b>${window.escapeHTML(draft.username)}</b></p>` : ''}</div>
