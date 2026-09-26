@@ -780,6 +780,76 @@
             .tp-plan-head{align-items:flex-start;flex-direction:column}
         }
 
+    
+        /* =========================================================
+           CORRECTIF MOBILE V1 — annonces/messages sans débordement
+           + allègement visuel pour navigateurs mobiles fragiles
+           ========================================================= */
+        @media (max-width: 767px) {
+            html, body, #root, #dashboard-top, .client-home, .client-main {
+                max-width: 100%;
+                overflow-x: hidden !important;
+            }
+
+            #client-global-announcement {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+            #client-global-announcement > div:not(.absolute),
+            #client-global-announcement > div:not(.absolute) > div,
+            #client-global-announcement h4,
+            #client-global-announcement p {
+                min-width: 0 !important;
+                max-width: 100% !important;
+                overflow-wrap: anywhere !important;
+                word-break: break-word !important;
+            }
+            #client-global-announcement > div:last-child {
+                width: 100% !important;
+                flex-wrap: wrap !important;
+            }
+            #client-global-announcement button {
+                max-width: 100% !important;
+                white-space: normal !important;
+            }
+
+            #news-section,
+            #news-section article,
+            #news-section article > div {
+                min-width: 0 !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            #news-section h4,
+            #news-section p {
+                overflow-wrap: anywhere !important;
+                word-break: break-word !important;
+            }
+
+            /* Réduit la charge GPU/mémoire sur Android/iOS sans modifier le bureau. */
+            .auth-3d-logo-wrap,
+            .auth-3d-ring,
+            .auth-3d-scene::before,
+            .auth-3d-scene::after,
+            .auth-ocean-wave,
+            .auth-storm-flash,
+            .auth-lightning,
+            .auth-raindrop,
+            .auth-rain-splash {
+                animation: none !important;
+                will-change: auto !important;
+            }
+            .auth-storm-flash,
+            .auth-lightning,
+            .auth-raindrop,
+            .auth-rain-splash {
+                display: none !important;
+            }
+        }
+
     </style>
 
 <style id="sesame-v6-mobile-fixes">
@@ -1764,6 +1834,18 @@ img, video, canvas, svg { max-width: 100%; }
             }, 1000);
         };
 
+        // Stabilisation mobile : plusieurs snapshots Firebase peuvent arriver
+        // presque simultanément. On regroupe leurs rendus en un seul par frame
+        // pour éviter de reconstruire tout le DOM plusieurs fois d'affilée.
+        let firebaseRenderFrame = 0;
+        function scheduleFirebaseRender() {
+            if (firebaseRenderFrame) return;
+            firebaseRenderFrame = requestAnimationFrame(() => {
+                firebaseRenderFrame = 0;
+                renderApp();
+            });
+        }
+
         // ==========================================
         // 4. RENDU DE L'INTERFACE UI (MANDATAIRE)
         // ==========================================
@@ -2211,7 +2293,7 @@ img, video, canvas, svg { max-width: 100%; }
                                 }).catch(handlePermissionError);
                             } else {
                                 window.appState.profile = data;
-                                renderApp();
+                                scheduleFirebaseRender();
                             }
                         } else if (!window.appState.isAdmin) {
                             window.appState.authError = "Votre profil a été supprimé par l’administrateur.";
@@ -2227,7 +2309,7 @@ img, video, canvas, svg { max-width: 100%; }
                     unsubTransactions = onSnapshot(txCol, (snapshot) => {
                         const txs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                         window.appState.transactions = txs.filter(t => t.userId === currentUser.uid).sort((a,b) => b.date - a.date);
-                        renderApp();
+                        scheduleFirebaseRender();
                     }, handlePermissionError);
 
                     // Écoute de la configuration globale Stripe
@@ -2247,7 +2329,7 @@ img, video, canvas, svg { max-width: 100%; }
                                 'ux-design': 'https://buy.stripe.com/mock_ux_design'
                             };
                         }
-                        renderApp();
+                        scheduleFirebaseRender();
                     });
 
                     // Configuration PIMP CARD indépendante de Stripe : aucune URL n'est codée dans le HTML.
@@ -2255,7 +2337,7 @@ img, video, canvas, svg { max-width: 100%; }
                     const pimpCardRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'pimpCard');
                     unsubPimpCardConfig = onSnapshot(pimpCardRef, (snapshot) => {
                         window.appState.pimpCardUrl = snapshot.exists() ? String(snapshot.data().url || '') : '';
-                        renderApp();
+                        scheduleFirebaseRender();
                     }, handlePermissionError);
 
                     // Configuration Manage globale, indépendante de Stripe et de PIMP CARD.
@@ -2263,14 +2345,14 @@ img, video, canvas, svg { max-width: 100%; }
                     const manageRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'manage');
                     unsubManageConfig = onSnapshot(manageRef, (snapshot) => {
                         window.appState.manageUrl = snapshot.exists() ? String(snapshot.data().url || '') : '';
-                        renderApp();
+                        scheduleFirebaseRender();
                     }, handlePermissionError);
 
                     if (unsubManageGoldVibeConfig) unsubManageGoldVibeConfig();
                     const manageGoldVibeRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'manageGoldVibe');
                     unsubManageGoldVibeConfig = onSnapshot(manageGoldVibeRef, (snapshot) => {
                         window.appState.manageGoldVibeUrl = snapshot.exists() ? String(snapshot.data().url || '') : '';
-                        renderApp();
+                        scheduleFirebaseRender();
                     }, handlePermissionError);
 
                     // Écoute de la notification d'information globale
@@ -2282,7 +2364,7 @@ img, video, canvas, svg { max-width: 100%; }
                         } else {
                             window.appState.globalAnnouncement = null;
                         }
-                        renderApp();
+                        scheduleFirebaseRender();
                     }, handlePermissionError);
 
                     setupAdminAndGlobalListeners();
@@ -2354,7 +2436,7 @@ img, video, canvas, svg { max-width: 100%; }
                         ? snap.docs.map(d => ({ id: d.id, ...d.data() }))
                         : (snap.exists() ? [{ id: snap.id, ...snap.data() }] : []);
                     if (window.appState.isAdmin) window.processExpiredServicesForAdmin(window.appState.allProfiles);
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 const presenceSource = window.appState.isAdmin
@@ -2377,7 +2459,7 @@ img, video, canvas, svg { max-width: 100%; }
                     // Les battements Firebase actualisent lastSeen toutes les 30 s.
                     // Ne reconstruire l'interface que si un utilisateur passe
                     // réellement en ligne ou hors ligne.
-                    if (previousOnlineSignature !== onlineSignature(window.appState.presence)) renderApp();
+                    if (previousOnlineSignature !== onlineSignature(window.appState.presence)) scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 const quotesCol = collection(db, 'artifacts', appId, 'public', 'data', 'quotes');
@@ -2393,7 +2475,7 @@ img, video, canvas, svg { max-width: 100%; }
                     }
                     quotes.sort((a,b) => b.date - a.date);
                     window.appState.allQuotes = quotes.filter(quote => quote.deleteRequestedByClient !== true && isWithinClientRetention(quote, 'date') && (window.appState.isAdmin || quote.userId === auth.currentUser?.uid));
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
@@ -2415,7 +2497,7 @@ img, video, canvas, svg { max-width: 100%; }
                         isWithinClientRetention(message, 'timestamp') &&
                         (window.appState.isAdmin || (message.hiddenByClient !== true && message.deleteRequestedByClient !== true))
                     );
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 const clientMessagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'clientChats');
@@ -2423,7 +2505,7 @@ img, video, canvas, svg { max-width: 100%; }
                 unsubClientMessages = onSnapshot(clientMessagesSource, (snap) => {
                     const messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     window.appState.allClientMessages = messages.sort((a, b) => a.timestamp - b.timestamp);
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 const communityMembersCol = collection(db, 'artifacts', appId, 'public', 'data', 'communityMembers');
@@ -2431,14 +2513,14 @@ img, video, canvas, svg { max-width: 100%; }
                     window.appState.allCommunityMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
                         .filter(member => member.joined === true)
                         .sort((a, b) => (a.pseudo || '').localeCompare(b.pseudo || '', 'fr'));
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 const newsCol = collection(db, 'artifacts', appId, 'public', 'data', 'news');
                 unsubNews = onSnapshot(newsCol, (snap) => {
                     window.appState.allNews = snap.docs.map(d => ({ id: d.id, ...d.data() }))
                         .sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0));
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 // Écouteur global des transactions pour le calcul du chiffre d'affaires
@@ -2447,14 +2529,14 @@ img, video, canvas, svg { max-width: 100%; }
                     const txs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     txs.sort((a, b) => b.date - a.date);
                     window.appState.allTransactions = txs;
-                    renderApp();
+                    scheduleFirebaseRender();
                 }, handlePermissionError);
 
                 if (window.appState.isAdmin) {
                     const deletionHistoryCol = collection(db, 'artifacts', appId, 'public', 'data', 'deletionHistory');
                     unsubDeletionHistory = onSnapshot(deletionHistoryCol, (snap) => {
                         window.appState.allDeletionHistory = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                        renderApp();
+                        scheduleFirebaseRender();
                     }, handlePermissionError);
                 } else {
                     window.appState.allDeletionHistory = [];
@@ -5880,7 +5962,7 @@ img, video, canvas, svg { max-width: 100%; }
                             return `
                             <article class="bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
                                 ${news.image ? `<button type="button" onclick="window.openNewsImage('${news.id}')" class="relative group w-full overflow-hidden bg-slate-950 cursor-zoom-in" title="Agrandir l’image">
-                                    <img src="${news.image}" alt="${window.escapeHTML(news.title)}" class="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                                    <img src="${news.image}" alt="${window.escapeHTML(news.title)}" loading="lazy" decoding="async" class="w-full h-44 object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
                                     <span class="absolute right-2 bottom-2 p-2 rounded-full bg-slate-950/85 border border-white/20 text-white shadow-lg group-hover:bg-cyan-700 transition-colors"><i data-lucide="maximize-2" class="w-4 h-4"></i></span>
                                 </button>` : `<div class="h-28 bg-gradient-to-br from-cyan-950 to-purple-950 flex items-center justify-center"><i data-lucide="newspaper" class="w-10 h-10 text-cyan-700"></i></div>`}
                                 <div class="p-4 flex flex-col flex-1">
