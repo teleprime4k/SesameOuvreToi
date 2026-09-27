@@ -6457,6 +6457,9 @@ img, video, canvas, svg { max-width: 100%; }
                             <div class="space-y-3 font-mono text-xs flex-1 flex flex-col justify-between">
                                 <div class="space-y-2">
                                     <div>
+                                        <label for="cred-client-search" class="block text-[9px] text-cyan-300 uppercase mb-1">🔎 Rechercher un client :</label>
+                                        <input id="cred-client-search" type="search" autocomplete="off" spellcheck="false" placeholder="Nom, prénom ou adresse e-mail..." oninput="window.filterCredClients(this.value)"
+                                            class="w-full mb-2 bg-slate-950 border border-cyan-900/60 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-cyan-500 placeholder:text-slate-700 min-h-[36px]" />
                                         <label class="block text-[9px] text-slate-500 uppercase mb-1">Client :</label>
                                         <select id="cred-client-select" onchange="window.adminChangeCredClient(this.value)"
                                             class="w-full bg-slate-950 border border-slate-850 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 min-h-[36px]">
@@ -8336,6 +8339,22 @@ img, video, canvas, svg { max-width: 100%; }
                     currentInput.focus();
                 }
             }
+        };
+
+        // Recherche rapide dans le sélecteur « Transmettre des Identifiants ».
+        // Le filtrage se fait uniquement sur l'affichage : aucune donnée client n'est modifiée.
+        window.filterCredClients = (value) => {
+            const select = document.getElementById('cred-client-select');
+            if (!select) return;
+            const normalize = (text) => String(text || '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase().trim();
+            const query = normalize(value);
+            Array.from(select.options).forEach((option, index) => {
+                // Toujours conserver « Choisir un client », le Prototype et le client déjà sélectionné.
+                const keepVisible = index === 0 || option.value === PROTOTYPE_CLIENT_ID || option.selected;
+                option.hidden = !keepVisible && query && !normalize(option.textContent).includes(query);
+            });
         };
 
         // L'administrateur sélectionne un client dans son sélecteur d'identifiants sécurisés
