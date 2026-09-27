@@ -8341,8 +8341,9 @@ img, video, canvas, svg { max-width: 100%; }
             }
         };
 
-        // Recherche rapide dans le sélecteur « Transmettre des Identifiants ».
-        // Le filtrage se fait uniquement sur l'affichage : aucune donnée client n'est modifiée.
+        // Recherche rapide dans « Transmettre des Identifiants ».
+        // On reconstruit réellement les options du SELECT à partir des profils Sésame,
+        // car l'attribut HTML hidden sur les <option> n'est pas fiable selon le navigateur.
         window.filterCredClients = (value) => {
             const select = document.getElementById('cred-client-select');
             if (!select) return;
@@ -8350,11 +8351,26 @@ img, video, canvas, svg { max-width: 100%; }
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                 .toLowerCase().trim();
             const query = normalize(value);
-            Array.from(select.options).forEach((option, index) => {
-                // Toujours conserver « Choisir un client », le Prototype et le client déjà sélectionné.
-                const keepVisible = index === 0 || option.value === PROTOTYPE_CLIENT_ID || option.selected;
-                option.hidden = !keepVisible && query && !normalize(option.textContent).includes(query);
-            });
+            const selectedId = String(window.appState.selectedCredClientId || '');
+            const clients = (window.appState.allProfiles || [])
+                .filter(p => !isAdminProfile(p))
+                .filter(p => {
+                    if (!query) return true;
+                    const searchable = `${window.getClientName(p.email)} ${p.email || ''}`;
+                    return normalize(searchable).includes(query);
+                });
+
+            const prototypeMatches = !query || normalize('Client Prototype Simulation prototype@sesame.local').includes(query);
+            const options = [
+                '<option value="">-- Choisir un client --</option>',
+                prototypeMatches ? `<option value="${PROTOTYPE_CLIENT_ID}" ${selectedId === PROTOTYPE_CLIENT_ID ? 'selected' : ''}>🧪 Client Prototype (Simulation)</option>` : '',
+                ...clients.map(p => `<option value="${window.escapeHTML(p.id || '')}" ${selectedId === String(p.id || '') ? 'selected' : ''}>${window.escapeHTML(window.getClientName(p.email))} (${window.escapeHTML(p.email || '')})</option>`)
+            ].filter(Boolean);
+            select.innerHTML = options.join('');
+
+            // Si le client précédemment sélectionné n'est plus dans les résultats,
+            // revenir sur « Choisir un client » sans modifier ses données.
+            if (![...select.options].some(option => option.value === selectedId)) select.value = '';
         };
 
         // L'administrateur sélectionne un client dans son sélecteur d'identifiants sécurisés
