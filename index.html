@@ -5094,7 +5094,12 @@ img, video, canvas, svg { max-width: 100%; }
             const activeCredRawExtra = activeCredClient?.credentials?.extra || "";
             const activeCredServerUrl = activeCredClient?.credentials?.serverUrl || (/^https?:\/\//i.test(activeCredRawExtra) ? activeCredRawExtra : "");
             const activeCredExtra = activeCredClient?.credentials?.serverUrl ? activeCredRawExtra : (/^https?:\/\//i.test(activeCredRawExtra) ? "" : activeCredRawExtra);
-            const activeCredSubscriptionName = activeCredClient?.credentials?.subscriptionName || "";
+            // Mémoriser automatiquement le nom de l’abonnement lors des retransmissions :
+            // priorité à la valeur déjà enregistrée avec les identifiants ; pour les anciens
+            // dossiers qui n’avaient pas encore ce champ, reprendre l’offre PASS TV du client.
+            const activeCredSubscriptionName = activeCredClient?.credentials?.subscriptionName
+                || activeCredClient?.services?.[TV_PASS_SERVICE_ID]?.subscriptionOffer
+                || "";
 
             // Calcul du Chiffre d'Affaires Global (CA) de l'Admin
             let globalCA = 0;
