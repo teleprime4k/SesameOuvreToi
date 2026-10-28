@@ -5374,7 +5374,7 @@ img, video, canvas, svg { max-width: 100%; }
                         <nav class="admin-nav-group"><span class="admin-nav-title">Général</span><button class="admin-nav-link active" onclick="window.mobileGoTo('dashboard-top')"><i data-lucide="house"></i>Vue d’ensemble</button></nav>
                         <nav class="admin-nav-group"><span class="admin-nav-title">Gestion</span><button class="admin-nav-link" onclick="window.mobileGoTo('admin-clients')"><i data-lucide="users"></i>Clients</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-pending-profiles')"><i data-lucide="file-text"></i>Demandes</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-support')"><i data-lucide="headphones"></i>Messagerie de Support Client</button></nav>
                         <nav class="admin-nav-group"><span class="admin-nav-title">Services</span><button class="admin-nav-link" onclick="window.mobileGoTo('admin-referrals')"><i data-lucide="users-round"></i>Parrainages</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-announcement')"><i data-lucide="megaphone"></i>Diffuser une info globale</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-pricing')"><i data-lucide="tags"></i>Ajuster les tarifs clients</button>${manageUrl && /^https:\/\//i.test(manageUrl) ? `<a class="admin-nav-link" href="${window.escapeHTML(manageUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir Manage King Prime"><i data-lucide="crown"></i>Manage King Prime</a>` : ''}${manageGoldVibeUrl && /^https:\/\//i.test(manageGoldVibeUrl) ? `<a class="admin-nav-link" href="${window.escapeHTML(manageGoldVibeUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir Manage Gold Vibe"><i data-lucide="gem"></i>Manage Gold Vibe</a>` : ''}</nav>
-                        <nav class="admin-nav-group"><span class="admin-nav-title">Contenu</span><button class="admin-nav-link" onclick="window.mobileGoTo('community-section')"><i data-lucide="message-square"></i>Communauté</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-tv-offers')"><i data-lucide="tags"></i>Disponibilité des offres</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i>Gestion Teleprime4K</button></nav>
+                        <nav class="admin-nav-group"><span class="admin-nav-title">Contenu</span><button class="admin-nav-link" onclick="window.mobileGoTo('community-section')"><i data-lucide="message-square"></i>Communauté</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-tv-offers')"><i data-lucide="tags"></i>Disponibilité des offres</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i>Gestion Teleprime4K</button><button class="admin-nav-link" data-teleprime-license-nav="1" onclick="window.openTelePrimeLicenseConsole()"><i data-lucide="key-round"></i>🔐 Console Propriétaire Télé Prime4K</button></nav>
                         <nav class="admin-nav-group">
     <span class="admin-nav-title">Administration</span>
 
@@ -6215,7 +6215,7 @@ img, video, canvas, svg { max-width: 100%; }
                         <button type="button" onclick="window.mobileGoTo('admin-pimp-card')"><i data-lucide="palette"></i><span>Lien PIMP CARD</span></button>
                         <button type="button" onclick="window.mobileGoTo('admin-prototype')"><i data-lucide="flask-conical"></i><span>Compte client prototype</span></button>
                         <button type="button" onclick="window.mobileGoTo('community-section')"><i data-lucide="users-round"></i><span>Communauté</span></button>
-                        <button type="button" onclick="window.mobileGoTo('admin-tv-offers')"><i data-lucide="tags"></i><span>Disponibilité des offres</span></button><button type="button" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i><span>Gestion Teleprime4K</span></button>
+                        <button type="button" onclick="window.mobileGoTo('admin-tv-offers')"><i data-lucide="tags"></i><span>Disponibilité des offres</span></button><button type="button" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i><span>Gestion Teleprime4K</span></button><button type="button" data-teleprime-license-mobile="1" onclick="window.openTelePrimeLicenseConsole()"><i data-lucide="key-round"></i><span>Console Propriétaire Télé Prime4K</span></button>
                         ${manageUrl && /^https:\/\//i.test(manageUrl) ? `<a href="${window.escapeHTML(manageUrl)}" target="_blank" rel="noopener noreferrer"><i data-lucide="crown"></i><span>Manage King Prime</span></a>` : ''}
                         ${manageGoldVibeUrl && /^https:\/\//i.test(manageGoldVibeUrl) ? `<a href="${window.escapeHTML(manageGoldVibeUrl)}" target="_blank" rel="noopener noreferrer"><i data-lucide="gem"></i><span>Manage Gold Vibe</span></a>` : ''}
                     </div>
@@ -11097,23 +11097,8 @@ function attachSection() {
 }
 
 function addNavigation() {
-  if (document.querySelector('[data-teleprime-license-nav]')) return;
-  const groups = [...document.querySelectorAll('.admin-nav-group')];
-  const targetGroup = groups.find(group => group.querySelector('[onclick*="admin-teleprime4k-site"]')) || groups[groups.length - 1] || document.querySelector('.admin-sidebar');
-  if (targetGroup) {
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'admin-nav-link'; btn.dataset.teleprimeLicenseNav = '1';
-    btn.innerHTML = '<i data-lucide="key-round"></i><span>Licences Télé Prime4K</span>';
-    btn.onclick = () => openConsole();
-    const siteButton = targetGroup.querySelector('[onclick*="admin-teleprime4k-site"]');
-    if (siteButton) siteButton.insertAdjacentElement('afterend', btn);
-    else targetGroup.appendChild(btn);
-  }
-  const mobile = document.querySelector('.mobile-admin-tools-hub');
-  if (mobile && !mobile.querySelector('[data-teleprime-license-mobile]')) {
-    const btn = document.createElement('button'); btn.type='button'; btn.dataset.teleprimeLicenseMobile='1';
-    btn.innerHTML='<i data-lucide="key-round"></i><span>Licences Télé Prime4K</span>'; btn.onclick=()=>openConsole(); mobile.appendChild(btn);
-  }
+  // Les boutons sont intégrés au menu rendu par Sésame.
+  // Ne pas ajouter une seconde entrée par JavaScript.
   if (window.lucide?.createIcons) window.lucide.createIcons({root: document});
 }
 
@@ -11125,7 +11110,7 @@ function openConsole() {
   if (typeof window.mobileGoTo === 'function') window.mobileGoTo('admin-teleprime-licenses');
   setTimeout(() => {
     const title = document.getElementById('admin-workspace-title');
-    if (title && document.getElementById('admin-workspace-body')?.contains(section)) title.textContent = 'Licences Télé Prime4K';
+    if (title && document.getElementById('admin-workspace-body')?.contains(section)) title.textContent = 'Console Propriétaire Télé Prime4K';
     section.scrollIntoView({behavior:'smooth', block:'start'});
     refreshLicenses();
   }, 60);
