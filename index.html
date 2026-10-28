@@ -2643,7 +2643,7 @@ img, video, canvas, svg { max-width: 100%; }
         // ==========================================
         window.selectTvPassOffer = async (value) => {
             const offer = String(value || '').trim();
-            if (offer && !window.appState.isAdmin && !tvOfferAvailable(offer)) { window.showToast?.('Cette offre est indisponible pour le moment.','error'); return; }
+            if (offer && !tvOfferAvailable(offer)) { window.showToast?.('Cette offre est indisponible pour le moment.','error'); return; }
             window.appState.selectedTvPassOffer = isValidTvPassOffer(offer) ? offer : '';
             if (window.appState.isAdmin) {
                 const prototype = window.getAdminPrototypeClient();
@@ -2679,7 +2679,7 @@ img, video, canvas, svg { max-width: 100%; }
                 ? window.getAdminPrototypeClient().services?.[TV_PASS_SERVICE_ID]
                 : window.appState.profile?.services?.[TV_PASS_SERVICE_ID];
             const candidate = fieldValue || window.appState.selectedTvPassOffer || serviceState?.subscriptionOffer || '';
-            return isValidTvPassOffer(candidate) && (window.appState.isAdmin || tvOfferAvailable(candidate)) ? candidate : '';
+            return isValidTvPassOffer(candidate) && tvOfferAvailable(candidate) ? candidate : '';
         };
 
         window.handleServiceAction = async (sId) => {
@@ -5885,10 +5885,10 @@ img, video, canvas, svg { max-width: 100%; }
                                                 <span class="block mb-2 text-[9px] uppercase font-bold text-cyan-300">Choisissez votre offre</span>
                                                 <select id="tv-pass-offer-select" onchange="window.selectTvPassOffer(this.value)" class="w-full min-h-[40px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold text-white outline-none focus:border-cyan-500">
                                                     <option value="">-- Sélectionner une offre --</option>
-                                                    ${TV_PASS_OFFERS.filter(offer => isAdmin || tvOfferState(offer).status !== 'hidden').map(offer => `<option value="${offer}" ${selectedTvOffer === offer && (isAdmin || tvOfferAvailable(offer)) ? 'selected' : ''} ${!isAdmin && !tvOfferAvailable(offer) ? 'disabled' : ''}>${offer}${!isAdmin && !tvOfferAvailable(offer) ? ' — Temporairement indisponible' : ''}</option>`).join('')}
+                                                    ${TV_PASS_OFFERS.filter(offer => tvOfferState(offer).status !== 'hidden').map(offer => `<option value="${offer}" ${selectedTvOffer === offer && tvOfferAvailable(offer) ? 'selected' : ''} ${!tvOfferAvailable(offer) ? 'disabled' : ''}>${offer}${!tvOfferAvailable(offer) ? ' — Temporairement indisponible' : ''}</option>`).join('')}
                                                 </select>
                                                 <span class="block mt-2 text-[9px] text-slate-500">Ce choix sera conservé pour l’abonnement ou la réactivation.</span>
-                                                ${!isAdmin ? TV_PASS_OFFERS.filter(offer => tvOfferState(offer).status === 'unavailable').map(offer => `<p class="mt-2 text-[10px] text-amber-300">${window.escapeHTML(offer)} : ${window.escapeHTML(tvOfferState(offer).message || TV_OFFER_DEFAULT.message)}</p>`).join('') : ''}
+                                                ${TV_PASS_OFFERS.filter(offer => tvOfferState(offer).status === 'unavailable').map(offer => `<p class="mt-2 text-[10px] text-amber-300">${window.escapeHTML(offer)} : ${window.escapeHTML(tvOfferState(offer).message || TV_OFFER_DEFAULT.message)}</p>`).join('')}
                                             </label>
                                         `) : ''}
 
@@ -8856,6 +8856,10 @@ img, video, canvas, svg { max-width: 100%; }
             if (!service) return;
             if (serviceId === TV_PASS_SERVICE_ID && !isValidTvPassOffer(subscriptionOffer)) {
                 window.showToast("Choisissez d’abord l’offre 👑 King Prime ou 💎 Gold Vibe.", "error");
+                return;
+            }
+            if (serviceId === TV_PASS_SERVICE_ID && !tvOfferAvailable(subscriptionOffer)) {
+                window.showToast('Prototype : cette offre est actuellement indisponible.','error');
                 return;
             }
             const current = window.getAdminPrototypeClient().services[serviceId] || {};
