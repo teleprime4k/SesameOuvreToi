@@ -1508,17 +1508,17 @@ img, video, canvas, svg { max-width: 100%; }
         const tvOfferState = offer => ({...TV_OFFER_DEFAULT, ...(window.tvOfferPolicy?.[offer] || {})});
         const tvOfferAvailable = offer => Boolean(offer) && tvOfferState(offer).status === 'available' && window.tvOfferPolicyLoaded;
         window.saveTvOfferPolicy = async (offer, status, message) => {
-            if (!window.appState?.isAdmin || !auth.currentUser || !TV_PASS_OFFERS.includes(offer)) return;
-            if (!['available','unavailable','hidden'].includes(status)) return;
+            if (!window.appState?.isAdmin || !auth.currentUser || !TV_PASS_OFFERS.includes(offer)) { window.showToast?.('Enregistrement impossible : connectez-vous avec le compte administrateur.', 'error'); return; }
+            if (!['available','unavailable','hidden'].includes(status)) { window.showToast?.('Statut de l’offre invalide.', 'error'); return; }
             const next = {...window.tvOfferPolicy, [offer]:{status, message:String(message||'').trim().slice(0,240)}};
             try {
                 await setDoc(doc(db,'artifacts',appId,'public','data','config','teleprime4kSite'),
                     {tvOfferAvailability:next, tvOfferUpdatedAt:Date.now(), tvOfferUpdatedBy:auth.currentUser.uid}, {merge:true});
-                window.showToast?.('Disponibilité de l’offre enregistrée.');
+                window.tvOfferPolicy = next; window.showToast?.('Disponibilité de l’offre enregistrée.');
             } catch(e) {console.error('Enregistrement disponibilité',e);window.showToast?.('Enregistrement impossible : vérifiez les autorisations Firebase.','error');}
         };
         window.changeTvOfferPolicy = offer => {
-            const index=TV_PASS_OFFERS.indexOf(offer);if(index<0)return;
+            const index=Number(offer);if(!Number.isInteger(index)||index<0||index>=TV_PASS_OFFERS.length)return;offer=TV_PASS_OFFERS[index];
             const status=document.getElementById('tv-offer-status-'+index)?.value;
             const message=document.getElementById('tv-offer-message-'+index)?.value;
             window.saveTvOfferPolicy(offer,status,message);
@@ -6163,7 +6163,7 @@ img, video, canvas, svg { max-width: 100%; }
                                 ${[['available','Disponible'],['unavailable','Temporairement indisponible'],['hidden','Masquée']].map(([value,label])=>`<option value="${value}" ${tvOfferState(offer).status===value?'selected':''}>${label}</option>`).join('')}
                             </select>
                             <input id="tv-offer-message-${i}" maxlength="240" class="w-full rounded-lg bg-slate-900 text-white border border-slate-700 p-2 text-sm" placeholder="Message affiché au client" value="${window.escapeHTML(tvOfferState(offer).message)}">
-                            <button type="button" onclick="window.changeTvOfferPolicy(TV_PASS_OFFERS[${i}])" class="rounded-lg bg-purple-700 text-white p-2 text-xs font-bold">Enregistrer cette offre</button>
+                            <button type="button" onclick="window.changeTvOfferPolicy(${i})" class="rounded-lg bg-purple-700 text-white p-2 text-xs font-bold">Enregistrer cette offre</button>
                         </div>`).join('')}</div>
                     </section>
 
