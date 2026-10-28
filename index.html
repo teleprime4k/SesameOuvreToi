@@ -7400,6 +7400,7 @@ img, video, canvas, svg { max-width: 100%; }
                 currentPlacements.forEach(currentPlacement => {
                     if (currentPlacement?.element?.isConnected && currentPlacement?.placeholder?.parentNode) {
                         currentPlacement.placeholder.parentNode.insertBefore(currentPlacement.element, currentPlacement.placeholder);
+                        if (currentPlacement.element.id === 'admin-teleprime-licenses') currentPlacement.element.classList.add('hidden');
                         currentPlacement.placeholder.remove();
                     }
                 });
@@ -11056,7 +11057,7 @@ function styles() {
 function createSection() {
   const section = document.createElement('section');
   section.id = 'admin-teleprime-licenses';
-  section.className = 'mobile-anchor';
+  section.className = 'mobile-anchor hidden';
   section.innerHTML = `
     <div class="tp-lic-head">
       <div><h3>🔐 Console Propriétaire Télé Prime4K</h3><p>Licences application · 1 licence = 1 appareil · clients Sésame et utilisateurs externes.</p></div>
@@ -11098,13 +11099,15 @@ function attachSection() {
 function addNavigation() {
   if (document.querySelector('[data-teleprime-license-nav]')) return;
   const groups = [...document.querySelectorAll('.admin-nav-group')];
-  const targetGroup = groups[groups.length - 1] || document.querySelector('.admin-sidebar');
+  const targetGroup = groups.find(group => group.querySelector('[onclick*="admin-teleprime4k-site"]')) || groups[groups.length - 1] || document.querySelector('.admin-sidebar');
   if (targetGroup) {
     const btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'admin-nav-link'; btn.dataset.teleprimeLicenseNav = '1';
     btn.innerHTML = '<i data-lucide="key-round"></i><span>Licences Télé Prime4K</span>';
     btn.onclick = () => openConsole();
-    targetGroup.appendChild(btn);
+    const siteButton = targetGroup.querySelector('[onclick*="admin-teleprime4k-site"]');
+    if (siteButton) siteButton.insertAdjacentElement('afterend', btn);
+    else targetGroup.appendChild(btn);
   }
   const mobile = document.querySelector('.mobile-admin-tools-hub');
   if (mobile && !mobile.querySelector('[data-teleprime-license-mobile]')) {
@@ -11118,6 +11121,7 @@ function openConsole() {
   attachSection();
   const section = document.getElementById('admin-teleprime-licenses');
   if (!section) return;
+  section.classList.remove('hidden');
   if (typeof window.mobileGoTo === 'function') window.mobileGoTo('admin-teleprime-licenses');
   setTimeout(() => {
     const title = document.getElementById('admin-workspace-title');
