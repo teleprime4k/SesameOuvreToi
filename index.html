@@ -1500,6 +1500,38 @@ img, video, canvas, svg { max-width: 100%; }
         const TV_PASS_SERVICE_ID = 'cdn-global';
         const TV_PASS_OFFERS = Object.freeze(['👑 King Prime', '💎 Gold Vibe']);
         const isValidTvPassOffer = (value) => TV_PASS_OFFERS.includes(String(value || '').trim());
+
+        // Disponibilité pilotée par l'administrateur dans le document de configuration existant.
+        const TV_OFFER_DEFAULT = {status:'available', message:'Cette offre est temporairement indisponible.'};
+        window.tvOfferPolicy = {};
+        window.tvOfferPolicyLoaded = false;
+        const tvOfferState = offer => ({...TV_OFFER_DEFAULT, ...(window.tvOfferPolicy?.[offer] || {})});
+        const tvOfferAvailable = offer => Boolean(offer) && tvOfferState(offer).status === 'available' && window.tvOfferPolicyLoaded;
+        window.saveTvOfferPolicy = async (offer, status, message) => {
+            if (!window.appState?.isAdmin || !auth.currentUser || !TV_PASS_OFFERS.includes(offer)) return;
+            if (!['available','unavailable','hidden'].includes(status)) return;
+            const next = {...window.tvOfferPolicy, [offer]:{status, message:String(message||'').trim().slice(0,240)}};
+            try {
+                await setDoc(doc(db,'artifacts',appId,'public','data','config','teleprime4kSite'),
+                    {tvOfferAvailability:next, tvOfferUpdatedAt:Date.now(), tvOfferUpdatedBy:auth.currentUser.uid}, {merge:true});
+                window.showToast?.('Disponibilité de l’offre enregistrée.');
+            } catch(e) {console.error('Enregistrement disponibilité',e);window.showToast?.('Enregistrement impossible : vérifiez les autorisations Firebase.','error');}
+        };
+        window.changeTvOfferPolicy = offer => {
+            const index=TV_PASS_OFFERS.indexOf(offer);if(index<0)return;
+            const status=document.getElementById('tv-offer-status-'+index)?.value;
+            const message=document.getElementById('tv-offer-message-'+index)?.value;
+            window.saveTvOfferPolicy(offer,status,message);
+        };
+        // Le client reçoit les changements en direct; aucune offre n'est commandable avant lecture de la politique.
+        onSnapshot(doc(db,'artifacts',appId,'public','data','config','teleprime4kSite'), snap => {
+            const data=snap.exists()?snap.data():{};
+            window.tvOfferPolicy=data.tvOfferAvailability && typeof data.tvOfferAvailability==='object' ? data.tvOfferAvailability : {};
+            window.tvOfferPolicyLoaded=true;
+            if (window.appState?.selectedTvPassOffer && !tvOfferAvailable(window.appState.selectedTvPassOffer)) window.appState.selectedTvPassOffer='';
+            if (typeof renderApp==='function' && window.appState?.user) renderApp();
+        }, e=>{console.error('Politique offres indisponible',e);window.tvOfferPolicyLoaded=false;});
+
         const CLIENT_CANCELLATION_REQUEST_IDS = new Set(['stockage-cloud', 'security-pack']);
         const ADMIN_RENEWAL_CONFIRMATION_IDS = new Set(['stockage-cloud', 'gestion-crm', 'security-pack']);
         // Ces abonnements sont prélevés hors du parcours client : à expiration,
@@ -2611,6 +2643,7 @@ img, video, canvas, svg { max-width: 100%; }
         // ==========================================
         window.selectTvPassOffer = async (value) => {
             const offer = String(value || '').trim();
+            if (offer && !window.appState.isAdmin && !tvOfferAvailable(offer)) { window.showToast?.('Cette offre est indisponible pour le moment.','error'); return; }
             window.appState.selectedTvPassOffer = isValidTvPassOffer(offer) ? offer : '';
             if (window.appState.isAdmin) {
                 const prototype = window.getAdminPrototypeClient();
@@ -2646,7 +2679,7 @@ img, video, canvas, svg { max-width: 100%; }
                 ? window.getAdminPrototypeClient().services?.[TV_PASS_SERVICE_ID]
                 : window.appState.profile?.services?.[TV_PASS_SERVICE_ID];
             const candidate = fieldValue || window.appState.selectedTvPassOffer || serviceState?.subscriptionOffer || '';
-            return isValidTvPassOffer(candidate) ? candidate : '';
+            return isValidTvPassOffer(candidate) && (window.appState.isAdmin || tvOfferAvailable(candidate)) ? candidate : '';
         };
 
         window.handleServiceAction = async (sId) => {
@@ -3016,7 +3049,7 @@ img, video, canvas, svg { max-width: 100%; }
             const service = SERVICES_DATA.find(s => s.id === sId);
             if(!service) return;
 
-            if (sId === TV_PASS_SERVICE_ID && !isValidTvPassOffer(subscriptionOffer)) {
+            if (sId === TV_PASS_SERVICE_ID && (!isValidTvPassOffer(subscriptionOffer) || (!window.appState.isAdmin && !tvOfferAvailable(subscriptionOffer)))) {
                 window.showToast("Choisissez d’abord l’offre 👑 King Prime ou 💎 Gold Vibe.", "error");
                 return;
             }
@@ -3074,7 +3107,7 @@ img, video, canvas, svg { max-width: 100%; }
                 window.showToast("Lien Stripe invalide ou session expirée.", "error");
                 return;
             }
-            if (sId === TV_PASS_SERVICE_ID && !isValidTvPassOffer(subscriptionOffer)) {
+            if (sId === TV_PASS_SERVICE_ID && (!isValidTvPassOffer(subscriptionOffer) || (!window.appState.isAdmin && !tvOfferAvailable(subscriptionOffer)))) {
                 window.showToast("L’offre PASS TV sélectionnée est invalide.", "error");
                 return;
             }
@@ -5341,7 +5374,7 @@ img, video, canvas, svg { max-width: 100%; }
                         <nav class="admin-nav-group"><span class="admin-nav-title">Général</span><button class="admin-nav-link active" onclick="window.mobileGoTo('dashboard-top')"><i data-lucide="house"></i>Vue d’ensemble</button></nav>
                         <nav class="admin-nav-group"><span class="admin-nav-title">Gestion</span><button class="admin-nav-link" onclick="window.mobileGoTo('admin-clients')"><i data-lucide="users"></i>Clients</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-pending-profiles')"><i data-lucide="file-text"></i>Demandes</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-support')"><i data-lucide="headphones"></i>Messagerie de Support Client</button></nav>
                         <nav class="admin-nav-group"><span class="admin-nav-title">Services</span><button class="admin-nav-link" onclick="window.mobileGoTo('admin-referrals')"><i data-lucide="users-round"></i>Parrainages</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-announcement')"><i data-lucide="megaphone"></i>Diffuser une info globale</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-pricing')"><i data-lucide="tags"></i>Ajuster les tarifs clients</button>${manageUrl && /^https:\/\//i.test(manageUrl) ? `<a class="admin-nav-link" href="${window.escapeHTML(manageUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir Manage King Prime"><i data-lucide="crown"></i>Manage King Prime</a>` : ''}${manageGoldVibeUrl && /^https:\/\//i.test(manageGoldVibeUrl) ? `<a class="admin-nav-link" href="${window.escapeHTML(manageGoldVibeUrl)}" target="_blank" rel="noopener noreferrer" title="Ouvrir Manage Gold Vibe"><i data-lucide="gem"></i>Manage Gold Vibe</a>` : ''}</nav>
-                        <nav class="admin-nav-group"><span class="admin-nav-title">Contenu</span><button class="admin-nav-link" onclick="window.mobileGoTo('community-section')"><i data-lucide="message-square"></i>Communauté</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i>Gestion Teleprime4K</button></nav>
+                        <nav class="admin-nav-group"><span class="admin-nav-title">Contenu</span><button class="admin-nav-link" onclick="window.mobileGoTo('community-section')"><i data-lucide="message-square"></i>Communauté</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-tv-offers')"><i data-lucide="tags"></i>Disponibilité des offres</button><button class="admin-nav-link" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i>Gestion Teleprime4K</button></nav>
                         <nav class="admin-nav-group">
     <span class="admin-nav-title">Administration</span>
 
@@ -5852,9 +5885,10 @@ img, video, canvas, svg { max-width: 100%; }
                                                 <span class="block mb-2 text-[9px] uppercase font-bold text-cyan-300">Choisissez votre offre</span>
                                                 <select id="tv-pass-offer-select" onchange="window.selectTvPassOffer(this.value)" class="w-full min-h-[40px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-bold text-white outline-none focus:border-cyan-500">
                                                     <option value="">-- Sélectionner une offre --</option>
-                                                    ${TV_PASS_OFFERS.map(offer => `<option value="${offer}" ${selectedTvOffer === offer ? 'selected' : ''}>${offer}</option>`).join('')}
+                                                    ${TV_PASS_OFFERS.filter(offer => isAdmin || tvOfferState(offer).status !== 'hidden').map(offer => `<option value="${offer}" ${selectedTvOffer === offer && (isAdmin || tvOfferAvailable(offer)) ? 'selected' : ''} ${!isAdmin && !tvOfferAvailable(offer) ? 'disabled' : ''}>${offer}${!isAdmin && !tvOfferAvailable(offer) ? ' — Temporairement indisponible' : ''}</option>`).join('')}
                                                 </select>
                                                 <span class="block mt-2 text-[9px] text-slate-500">Ce choix sera conservé pour l’abonnement ou la réactivation.</span>
+                                                ${!isAdmin ? TV_PASS_OFFERS.filter(offer => tvOfferState(offer).status === 'unavailable').map(offer => `<p class="mt-2 text-[10px] text-amber-300">${window.escapeHTML(offer)} : ${window.escapeHTML(tvOfferState(offer).message || TV_OFFER_DEFAULT.message)}</p>`).join('') : ''}
                                             </label>
                                         `) : ''}
 
@@ -6120,6 +6154,19 @@ img, video, canvas, svg { max-width: 100%; }
                     </div>
 
 
+                    <section id="admin-tv-offers" class="standalone-admin-tool mobile-anchor rounded-2xl border border-purple-500/30 bg-slate-950/70 p-4 sm:p-5">
+                        <h4 class="text-sm font-bold text-white mb-2">Disponibilité des offres TV</h4>
+                        <p class="text-xs text-slate-400 mb-4">Disponible : commandable · Indisponible : visible mais bloquée · Masquée : invisible pour les clients.</p>
+                        <div class="grid gap-3">${TV_PASS_OFFERS.map((offer,i)=>`<div class="rounded-xl border border-slate-700 p-3 grid gap-2">
+                            <strong class="text-sm text-white">${window.escapeHTML(offer)}</strong>
+                            <select id="tv-offer-status-${i}" class="w-full rounded-lg bg-slate-900 text-white border border-slate-700 p-2 text-sm">
+                                ${[['available','Disponible'],['unavailable','Temporairement indisponible'],['hidden','Masquée']].map(([value,label])=>`<option value="${value}" ${tvOfferState(offer).status===value?'selected':''}>${label}</option>`).join('')}
+                            </select>
+                            <input id="tv-offer-message-${i}" maxlength="240" class="w-full rounded-lg bg-slate-900 text-white border border-slate-700 p-2 text-sm" placeholder="Message affiché au client" value="${window.escapeHTML(tvOfferState(offer).message)}">
+                            <button type="button" onclick="window.changeTvOfferPolicy(TV_PASS_OFFERS[${i}])" class="rounded-lg bg-purple-700 text-white p-2 text-xs font-bold">Enregistrer cette offre</button>
+                        </div>`).join('')}</div>
+                    </section>
+
                     <section id="admin-teleprime4k-site" class="standalone-admin-tool mobile-anchor rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-cyan-950/20 to-slate-950/80 p-4 sm:p-5">
                         <div class="flex flex-col gap-3 border-b border-slate-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -6168,7 +6215,7 @@ img, video, canvas, svg { max-width: 100%; }
                         <button type="button" onclick="window.mobileGoTo('admin-pimp-card')"><i data-lucide="palette"></i><span>Lien PIMP CARD</span></button>
                         <button type="button" onclick="window.mobileGoTo('admin-prototype')"><i data-lucide="flask-conical"></i><span>Compte client prototype</span></button>
                         <button type="button" onclick="window.mobileGoTo('community-section')"><i data-lucide="users-round"></i><span>Communauté</span></button>
-                        <button type="button" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i><span>Gestion Teleprime4K</span></button>
+                        <button type="button" onclick="window.mobileGoTo('admin-tv-offers')"><i data-lucide="tags"></i><span>Disponibilité des offres</span></button><button type="button" onclick="window.mobileGoTo('admin-teleprime4k-site')"><i data-lucide="monitor-cog"></i><span>Gestion Teleprime4K</span></button>
                         ${manageUrl && /^https:\/\//i.test(manageUrl) ? `<a href="${window.escapeHTML(manageUrl)}" target="_blank" rel="noopener noreferrer"><i data-lucide="crown"></i><span>Manage King Prime</span></a>` : ''}
                         ${manageGoldVibeUrl && /^https:\/\//i.test(manageGoldVibeUrl) ? `<a href="${window.escapeHTML(manageGoldVibeUrl)}" target="_blank" rel="noopener noreferrer"><i data-lucide="gem"></i><span>Manage Gold Vibe</span></a>` : ''}
                     </div>
@@ -7417,7 +7464,7 @@ img, video, canvas, svg { max-width: 100%; }
                     'admin-console': 'Outils administrateur', 'admin-prototype': 'Compte client prototype',
                     'admin-stripe': 'Liens Stripe personnalisés', 'admin-pimp-card': 'Lien PIMP CARD',
                     'admin-manage-link': 'Manage King Prime', 'admin-manage-gold-vibe-link': 'Manage Gold Vibe',
-                    'admin-teleprime4k-site': 'Gestion du site Teleprime4K'
+                    'admin-teleprime4k-site': 'Gestion du site Teleprime4K', 'admin-tv-offers': 'Disponibilité des offres'
                 };
                 Object.assign(titles, {
                     'admin-request-payments': 'Paiements à confirmer',
