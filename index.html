@@ -2026,6 +2026,17 @@ img, video, canvas, svg { max-width: 100%; }
             }
             const activeAdminField = captureActiveAdminField();
             const dirtyFormFields = captureDirtyFormFields();
+            // Étape 1 : préserver la position de navigation lors des rendus globaux.
+            const previousPageScroll = { x: window.scrollX, y: window.scrollY };
+            const previousChatScroll = {};
+            ['client-chat-box', 'admin-chat-box', 'prototype-support-box'].forEach(id => {
+                const box = document.getElementById(id);
+                if (!box) return;
+                previousChatScroll[id] = {
+                    top: box.scrollTop,
+                    nearBottom: box.scrollHeight - box.clientHeight - box.scrollTop <= 80
+                };
+            });
             
             if (window.appState.loadingAuth) {
                 root.innerHTML = `<div class="min-h-screen flex items-center justify-center text-cyan-500"><i data-lucide="zap" class="animate-pulse w-12 h-12"></i></div>`;
@@ -2093,17 +2104,18 @@ img, video, canvas, svg { max-width: 100%; }
                 });
             }
 
-            // Auto-scroll des tchats après le rendu
-            setTimeout(() => {
-                const clientChat = document.getElementById('client-chat-box');
-                if(clientChat) clientChat.scrollTop = clientChat.scrollHeight;
-                
-                const adminChat = document.getElementById('admin-chat-box');
-                if(adminChat) adminChat.scrollTop = adminChat.scrollHeight;
-
-                const prototypeChat = document.getElementById('prototype-support-box');
-                if(prototypeChat) prototypeChat.scrollTop = prototypeChat.scrollHeight;
-            }, 50);
+            // Restaurer le défilement après reconstruction : ne plus forcer
+            // systématiquement les conversations en bas lorsqu'on lit l'historique.
+            requestAnimationFrame(() => {
+                ['client-chat-box', 'admin-chat-box', 'prototype-support-box'].forEach(id => {
+                    const box = document.getElementById(id);
+                    if (!box) return;
+                    const previous = previousChatScroll[id];
+                    if (!previous || previous.nearBottom) box.scrollTop = box.scrollHeight;
+                    else box.scrollTop = previous.top;
+                });
+                window.scrollTo(previousPageScroll.x, previousPageScroll.y);
+            });
         }
         window.renderApp = renderApp;
 
@@ -11052,6 +11064,9 @@ function styles() {
   @media(max-width:600px){#admin-teleprime-licenses{padding:12px}.tp-lic-grid{display:flex;overflow-x:auto}.tp-lic-kpi{min-width:130px}.tp-lic-form{grid-template-columns:1fr}.tp-lic-form .tp-lic-create{grid-column:auto}.tp-lic-toolbar .tp-lic-input{max-width:none;flex:1 1 100%}.tp-lic-head h3{font-size:15px}}
   `;
   document.head.appendChild(s);
+  const extra = document.createElement("style");
+  extra.textContent = "\n/* Sésame V8 : sur téléphone, le menu ACCÈS RAPIDE reste l'unique grille de raccourcis.\n   La navigation inférieure et les cartes de suivi sont conservées. */\n@media (max-width:767px) {\n  .admin-dashboard-home-mode .admin-home .admin-actions { display:none !important; }\n}\n/* Console propriétaire : tableau PC, cartes compactes sur téléphone */\n@media (max-width:600px) {\n  #admin-teleprime-licenses .tp-lic-table-wrap { display:none; }\n  #admin-teleprime-licenses .tp-lic-mobile-cards { display:grid; gap:9px; }\n}\n@media (min-width:601px) {\n  #admin-teleprime-licenses .tp-lic-mobile-cards { display:none; }\n}\n#admin-teleprime-licenses .tp-lic-mobile-card {border:1px solid #25364f;background:#081426;border-radius:12px;padding:12px;min-width:0}\n#admin-teleprime-licenses .tp-lic-mobile-card .tp-lic-card-top {display:flex;align-items:center;justify-content:space-between;gap:8px}\n#admin-teleprime-licenses .tp-lic-mobile-card .tp-lic-key {overflow-wrap:anywhere}\n#admin-teleprime-licenses .tp-lic-mobile-card .tp-lic-card-meta {font-size:10px;color:#94a3b8;line-height:1.7;margin:9px 0}\n#admin-teleprime-licenses .tp-lic-create-details > summary {cursor:pointer;color:#fff;font-size:12px;font-weight:900;list-style:revert;padding:3px 0}\n#admin-teleprime-licenses .tp-lic-create-details > form {margin-top:12px}\n";
+  document.head.appendChild(extra);
 }
 
 function createSection() {
@@ -11072,13 +11087,13 @@ function createSection() {
       <div class="tp-lic-kpi"><small>À vie</small><strong id="tp-kpi-life">0</strong></div>
     </div>
     <div class="tp-lic-panel">
-      <div style="color:#fff;font-weight:900;font-size:12px;margin-bottom:12px">Créer une licence</div>
+      <details class="tp-lic-create-details"><summary>+ Créer une licence</summary>
       <form id="tp-license-create-form" class="tp-lic-form">
         <div class="tp-lic-field"><label>Durée</label><select id="tp-plan" class="tp-lic-select"><option value="1y">1 an</option><option value="2y">2 ans</option><option value="3y">3 ans</option><option value="4y">4 ans</option><option value="5y">5 ans</option><option value="lifetime">À vie ♾️</option></select></div>
         <div class="tp-lic-field"><label>Type</label><select id="tp-owner-type" class="tp-lic-select"><option value="client">Client Sésame</option><option value="external">Utilisateur externe</option></select></div>
         <div class="tp-lic-field"><label>Nom / référence</label><input id="tp-owner-label" maxlength="120" class="tp-lic-input" placeholder="Nom, prénom ou e-mail" required></div>
         <button class="tp-lic-btn primary tp-lic-create" type="submit">+ Créer la licence</button>
-      </form>
+      </form></details>
     </div>
     <div class="tp-lic-panel">
       <div class="tp-lic-toolbar" style="margin-bottom:11px"><input id="tp-license-search" class="tp-lic-input" type="search" placeholder="Rechercher clé, titulaire, appareil…"><select id="tp-status-filter" class="tp-lic-select" style="width:auto"><option value="">Tous les états</option><option value="pending">Non activées</option><option value="active">Actives</option><option value="expired">Expirées</option><option value="suspended">Suspendues</option><option value="revoked">Révoquées</option></select></div>
@@ -11123,7 +11138,7 @@ function wireSection(section) {
   section.querySelector('#tp-status-filter')?.addEventListener('change', renderTable);
   section.querySelector('#tp-license-create-form')?.addEventListener('submit', createLicense);
   updateApiWarning();
-  refreshLicenses();
+  // Chargement déclenché à l’ouverture explicite de la console.
 }
 
 function updateApiWarning() {
@@ -11200,8 +11215,37 @@ function renderTable() {
       <button class="tp-lic-btn delete" data-action="delete" data-key="${e(x.license_key)}">Supprimer</button>
     </div></td>
   </tr>`).join('')}</tbody></table></div>`;
+  const cards = document.createElement('div');
+  cards.className = 'tp-lic-mobile-cards';
+  cards.innerHTML = rows.map(x => `<article class="tp-lic-mobile-card">
+    <div class="tp-lic-card-top"><strong class="tp-lic-key">${e(x.license_key)}</strong><span class="tp-lic-status ${statusClass(x.status)}">${e(labelStatus(x.status))}</span></div>
+    <div class="tp-lic-card-meta"><b>${e(x.holder_name||x.holder_email||'Sans titulaire')}</b><br>${e(labelPlan(x.license_type))} · ${x.device_hash?'Appareil associé':'Non associé'}<br>Expiration : ${x.license_type==='lifetime'?'Jamais':e(fmt(x.expires_at))}</div>
+    <div class="tp-lic-toolbar"><button type="button" class="tp-lic-btn primary" data-tp-manage="${e(x.license_key)}">Gérer</button><button type="button" class="tp-lic-btn" data-copy="${e(x.license_key)}">Copier la clé</button></div>
+  </article>`).join('');
+  host.appendChild(cards);
+  cards.querySelectorAll('[data-tp-manage]').forEach(btn=>btn.addEventListener('click',()=>openMobileLicenseActions(btn.dataset.tpManage)));
   host.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',()=>copyKey(btn.dataset.copy)));
   host.querySelectorAll('[data-action]').forEach(btn=>btn.addEventListener('click',()=>handleAction(btn.dataset.action,btn.dataset.key)));
+}
+
+function openMobileLicenseActions(key) {
+  const row = cachedLicenses.find(x => x.license_key === key);
+  if (!row) return;
+  const actions = [
+    ['rename-holder','Renommer titulaire'],
+    ...(row.status !== 'suspended' && row.status !== 'revoked' ? [['suspend','Suspendre']] : []),
+    ...(row.status === 'suspended' ? [['reactivate','Réactiver']] : []),
+    ...(row.status !== 'revoked' ? [['revoke','Révoquer']] : []),
+    ...(row.device_hash ? [['reset-device','Réinitialiser appareil']] : []),
+    ...(row.license_type !== 'lifetime' ? [['extend','Prolonger']] : []),
+    ['events','Historique'], ['delete','Supprimer']
+  ];
+  const m = modal(`<h3 style="color:white;margin:0 0 12px">Gérer la licence</h3><div class="tp-lic-key" style="margin-bottom:12px">${e(key)}</div><div class="tp-lic-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${actions.map(([action,label])=>`<button type="button" class="tp-lic-btn ${action==='delete'?'delete':''}" data-mobile-action="${e(action)}">${e(label)}</button>`).join('')}</div><div style="margin-top:15px"><button type="button" class="tp-lic-btn" id="tp-modal-close">Fermer</button></div>`);
+  m.querySelectorAll('[data-mobile-action]').forEach(btn=>btn.addEventListener('click',()=>{
+    const action = btn.dataset.mobileAction;
+    closeModal();
+    handleAction(action,key);
+  }));
 }
 
 async function copyKey(key) {
@@ -11333,7 +11377,6 @@ const observer = new MutationObserver(() => {
   if (window.appState?.isAdmin === true) requestAnimationFrame(install);
 });
 observer.observe(document.documentElement, {subtree:true, childList:true});
-setInterval(install, 1800);
 window.openTelePrimeLicenseConsole = openConsole;
 install();
 
