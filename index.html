@@ -1898,13 +1898,15 @@ img, video, canvas, svg { max-width: 100%; }
         // Stabilisation mobile : plusieurs snapshots Firebase peuvent arriver
         // presque simultanément. On regroupe leurs rendus en un seul par frame
         // pour éviter de reconstruire tout le DOM plusieurs fois d'affilée.
-        let firebaseRenderFrame = 0;
+        // Regrouper les rafales de snapshots Firestore (une seule reconstruction
+        // au maximum par fenêtre de 120 ms, sans retarder les actions directes).
+        let firebaseRenderTimer = 0;
         function scheduleFirebaseRender() {
-            if (firebaseRenderFrame) return;
-            firebaseRenderFrame = requestAnimationFrame(() => {
-                firebaseRenderFrame = 0;
+            if (firebaseRenderTimer) return;
+            firebaseRenderTimer = window.setTimeout(() => {
+                firebaseRenderTimer = 0;
                 renderApp();
-            });
+            }, 120);
         }
 
         // ==========================================
@@ -11144,9 +11146,8 @@ function attachSection() {
 }
 
 function addNavigation() {
-  // Les boutons sont intégrés au menu rendu par Sésame.
-  // Ne pas ajouter une seconde entrée par JavaScript.
-  if (window.lucide?.createIcons) window.lucide.createIcons({root: document});
+  // Les boutons sont déjà intégrés au menu Sésame. renderApp() initialise
+  // les icônes : inutile de rescanner tout le document à chaque installation.
 }
 
 function openConsole() {
@@ -11406,10 +11407,18 @@ function install() {
   try { styles(); attachSection(); addNavigation(); } finally { injecting = false; }
 }
 
+// Observer uniquement les remplacements de l'interface principale, pas les
+// changements de texte, cartes, modales ou listes dans tout le document.
+let tpInstallFrame = 0;
 const observer = new MutationObserver(() => {
-  if (window.appState?.isAdmin === true) requestAnimationFrame(install);
+  if (window.appState?.isAdmin !== true || tpInstallFrame) return;
+  tpInstallFrame = requestAnimationFrame(() => {
+    tpInstallFrame = 0;
+    install();
+  });
 });
-observer.observe(document.documentElement, {subtree:true, childList:true});
+const tpRoot = document.getElementById('root');
+if (tpRoot) observer.observe(tpRoot, {childList:true});
 window.openTelePrimeLicenseConsole = openConsole;
 install();
 
